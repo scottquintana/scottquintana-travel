@@ -368,6 +368,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
       {panelPlace && !isMobile && (
         <PlaceDetailPanel
           place={panelPlace}
+          citySlug={city.slug}
           onClose={() => setPanelPlace(null)}
         />
       )}

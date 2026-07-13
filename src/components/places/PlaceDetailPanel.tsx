@@ -1,14 +1,16 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
-import { formatCategory } from "@/lib/utils";
+import { formatCategory, cn } from "@/lib/utils";
 import { X, ExternalLink, MapPin, Check, Copy, Map } from "lucide-react";
-import { useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import type { Place } from "@/lib/types";
 
 interface PlaceDetailPanelProps {
   place: Place;
+  citySlug: string;
   onClose: () => void;
 }
 
@@ -34,54 +36,71 @@ function AddressActions({ address }: { address: string }) {
   };
 
   return (
-    <div className="flex items-start gap-1.5 min-w-0">
-      <MapPin size={11} className="text-[var(--color-text-muted)] shrink-0 mt-0.5" />
-      <span className="text-xs text-[var(--color-text-muted)] leading-snug">{address}</span>
-      <div className="flex items-center gap-1 shrink-0 ml-1">
+    <div className="flex flex-col gap-1.5 min-w-0">
+      <div className="flex items-start gap-1.5">
+        <MapPin size={11} className="text-[var(--color-text-muted)] shrink-0 mt-0.5" />
+        <span className="text-xs text-[var(--color-text-muted)] leading-snug">{address}</span>
+      </div>
+      <div className="flex items-center gap-2">
         <button
           onClick={copy}
-          title="Copy address"
-          className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] transition-colors"
+          className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] px-2 py-1 rounded transition-colors"
         >
           {copied ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+          {copied ? "Copied" : "Copy address"}
         </button>
         <button
           onClick={openMaps}
-          title="Open in Google Maps"
-          className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] transition-colors"
+          className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] px-2 py-1 rounded transition-colors"
         >
           <Map size={11} />
+          Open in Maps
         </button>
       </div>
     </div>
   );
 }
 
-export function PlaceDetailPanel({ place, onClose }: PlaceDetailPanelProps) {
+export function PlaceDetailPanel({ place, citySlug, onClose }: PlaceDetailPanelProps) {
   const dotColor = CATEGORY_DOT[place.category] ?? "bg-gray-400";
   const firstLocation = place.locations?.[0];
   const photo = place.photos?.[0];
 
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const descRef = useRef<HTMLParagraphElement>(null);
+
+  // Reset when place changes
+  useEffect(() => {
+    setIsOverflowing(false);
+  }, [place.id]);
+
+  // Detect if description overflows the clamped container
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+    const id = requestAnimationFrame(() => {
+      setIsOverflowing(el.scrollHeight > el.clientHeight + 2);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [place.id, place.description]);
+
   return (
     <>
       {/* Mobile backdrop */}
-      <div
-        className="fixed inset-0 bg-black/30 z-40 md:hidden"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/30 z-40 md:hidden" onClick={onClose} />
 
-      {/* Mobile: bottom sheet / Desktop: slim bottom strip */}
-      <div className="fixed z-50 bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] shadow-[var(--shadow-lg)]
-        rounded-t-2xl md:rounded-none
-        max-h-[72vh] md:max-h-none
-        overflow-y-auto md:overflow-visible
-        flex flex-col md:flex-row md:items-center md:gap-5 md:px-4 md:py-2.5
-      ">
+      <div className={cn(
+        "fixed z-50 bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] shadow-[var(--shadow-lg)]",
+        "rounded-t-2xl md:rounded-none",
+        "max-h-[72vh] md:max-h-none",
+        "overflow-y-auto md:overflow-visible",
+        "flex flex-col md:flex-row md:gap-5 md:px-4 md:py-3 md:items-center",
+      )}>
 
         {/* Mobile drag handle */}
         <div className="w-8 h-1 bg-[var(--color-border)] rounded-full mx-auto mt-3 mb-1 md:hidden" />
 
-        {/* Photo — full width on mobile, small thumbnail on desktop */}
+        {/* Photo */}
         {photo && (
           <>
             <div className="relative h-44 w-full md:hidden shrink-0">
@@ -106,13 +125,26 @@ export function PlaceDetailPanel({ place, onClose }: PlaceDetailPanelProps) {
         </div>
 
         {/* Divider — desktop only */}
-        <div className="hidden md:block h-8 w-px bg-[var(--color-border)] shrink-0" />
+        <div className="hidden md:block h-8 w-px bg-[var(--color-border)] shrink-0 mt-1" />
 
         {/* Description */}
         {place.description && (
-          <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed px-4 py-1 md:p-0 md:line-clamp-2 md:max-w-xs min-w-0">
-            {place.description}
-          </p>
+          <div className="px-4 py-1 md:p-0 min-w-0 md:max-w-sm">
+            <p
+              ref={descRef}
+              className="text-xs text-[var(--color-text-secondary)] leading-relaxed md:line-clamp-3"
+            >
+              {place.description}
+            </p>
+            {isOverflowing && (
+              <Link
+                href={`/${citySlug}/${place.slug}`}
+                className="text-xs text-[var(--color-accent)] hover:underline mt-1 inline-block"
+              >
+                Read more →
+              </Link>
+            )}
+          </div>
         )}
 
         {/* Recommendations */}
@@ -127,7 +159,7 @@ export function PlaceDetailPanel({ place, onClose }: PlaceDetailPanelProps) {
         )}
 
         {/* Address + website */}
-        <div className="flex flex-col gap-2 px-4 py-2 md:p-0 md:shrink-0 md:max-w-[260px]">
+        <div className="flex flex-col gap-2 px-4 py-2 md:p-0 md:shrink-0">
           {firstLocation && <AddressActions address={firstLocation.address} />}
           {place.website && (
             <a

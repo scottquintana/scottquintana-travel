@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { X, MapPin, Copy, Check, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import Image from "next/image";
 import { CityMap } from "@/components/map/CityMap";
 import { formatCategory, cn } from "@/lib/utils";
@@ -75,7 +76,7 @@ const PEEK_H = "38vh";
 const EXPANDED_H = "68vh";
 const DRAG_THRESHOLD = 60;
 
-function MobileDetailSheet({ place, visible, onDismiss }: { place: Place; visible: boolean; onDismiss: () => void }) {
+function MobileDetailSheet({ place, citySlug, visible, onDismiss }: { place: Place; citySlug: string; visible: boolean; onDismiss: () => void }) {
   const [snap, setSnap] = useState<"peek" | "expanded">("peek");
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -211,7 +212,7 @@ function MobileDetailSheet({ place, visible, onDismiss }: { place: Place; visibl
 
         {/* Socials */}
         {place.socials && place.socials.length > 0 && (
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 mb-4">
             {place.socials.map((s, i) => (
               <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
                 className="text-sm text-[var(--color-accent)] hover:underline capitalize">
@@ -220,6 +221,15 @@ function MobileDetailSheet({ place, visible, onDismiss }: { place: Place; visibl
             ))}
           </div>
         )}
+
+        {/* Full details link */}
+        <Link
+          href={`/${citySlug}/${place.slug}`}
+          className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-[var(--radius-md)] border border-[var(--color-border)] text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors"
+        >
+          View full details
+          <ExternalLink size={13} className="shrink-0" />
+        </Link>
       </div>
     </div>
   );
@@ -352,6 +362,7 @@ export function MobileMapModal({
       {displayedPlace && (
         <MobileDetailSheet
           place={displayedPlace}
+          citySlug={city.slug}
           visible={sheetVisible}
           onDismiss={onDismissPlace}
         />
