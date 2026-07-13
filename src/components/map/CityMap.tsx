@@ -68,6 +68,8 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
   pinsRef.current = pins;
   const focusedLocationIdRef = useRef(focusedLocationId);
   focusedLocationIdRef.current = focusedLocationId;
+  // Prevents map onClick from firing when a pin was just tapped
+  const pinJustClickedRef = useRef(false);
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
@@ -82,14 +84,16 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
     setMap(null);
   }, []);
 
-  // On load: zoom to focused location if one is already set, otherwise fit all pins
+  // On load: zoom to focused location if one is already set, otherwise fit all pins.
+  // Uses setCenter/setZoom (instant, no animation) to avoid OverlayView misalignment
+  // during animated pan on first render.
   useEffect(() => {
     if (!map) return;
     const fid = focusedLocationIdRef.current;
     if (fid) {
       const pin = pinsRef.current.find((p) => p.location.id === fid);
       if (pin) {
-        map.panTo({ lat: pin.location.lat, lng: pin.location.lng });
+        map.setCenter({ lat: pin.location.lat, lng: pin.location.lng });
         map.setZoom(15);
       }
     } else {
@@ -140,7 +144,7 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
       options={mapOptions}
       onLoad={onLoad}
       onUnmount={onUnmount}
-      onClick={onMapClick}
+      onClick={() => { if (!pinJustClickedRef.current) onMapClick?.(); }}
     >
       {pins.map(({ place, location }) => {
         const isSelected = selectedPlaceId === place.id;
@@ -154,7 +158,12 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
             getPixelPositionOffset={() => ({ x: -HIT / 2, y: -HIT / 2 })}
           >
             <div
-              onClick={(e) => { e.stopPropagation(); onPinClick?.(place.id, location.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                pinJustClickedRef.current = true;
+                requestAnimationFrame(() => { pinJustClickedRef.current = false; });
+                onPinClick?.(place.id, location.id);
+              }}
               title={place.name}
               style={{
                 width: HIT,
