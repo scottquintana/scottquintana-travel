@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { PlaceCard } from "@/components/places/PlaceCard";
 import { CityMap } from "@/components/map/CityMap";
 import { PlaceDetailPanel } from "@/components/places/PlaceDetailPanel";
-import { formatCategory } from "@/lib/utils";
-import { Map, List } from "lucide-react";
+import { MobileMapModal } from "@/components/map/MobileMapModal";
+import { formatCategory, haversineDistanceMi, formatDistanceMi } from "@/lib/utils";
+import { Map, LocateFixed, Loader2, X, ArrowRight } from "lucide-react";
+import { geocodeAddress } from "@/lib/geocode";
 import type { City, Place } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -21,21 +23,95 @@ interface CityPageClientProps {
   places: Place[];
 }
 
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < breakpoint);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 export function CityPageClient({ city, places }: CityPageClientProps) {
+  const isMobile = useIsMobile();
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
   const [panelPlace, setPanelPlace] = useState<Place | null>(null);
   const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set());
   const [showUnvetted, setShowUnvetted] = useState(true);
-  const [mobileView, setMobileView] = useState<"list" | "map">("list");
+  const [mobileMapOpen, setMobileMapOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationLabel, setLocationLabel] = useState<string | null>(null);
+  const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "denied">("idle");
+  const [showLocationInput, setShowLocationInput] = useState(false);
+  const [locationInput, setLocationInput] = useState("");
+  const [locationInputStatus, setLocationInputStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [sortBy, setSortBy] = useState<"az" | "distance">("az");
+
+  const clearLocation = useCallback(() => {
+    setUserLocation(null);
+    setLocationLabel(null);
+    setLocationStatus("idle");
+  }, []);
+
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) return;
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocationLabel("Your location");
+        setLocationStatus("idle");
+      },
+      () => setLocationStatus("denied"),
+      { timeout: 8000 }
+    );
+  }, []);
+
+  const handleSetLocation = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = locationInput.trim();
+    if (!query) return;
+    setLocationInputStatus("loading");
+    const coords = await geocodeAddress(query);
+    if (coords) {
+      setUserLocation(coords);
+      setLocationLabel(query);
+      setShowLocationInput(false);
+      setLocationInput("");
+      setLocationInputStatus("idle");
+    } else {
+      setLocationInputStatus("error");
+    }
+  }, [locationInput]);
+
+  useEffect(() => {
+    setSortBy(userLocation ? "distance" : "az");
+    if (userLocation) setShowLocationInput(false);
+  }, [userLocation]);
+
+  useEffect(() => {
+    if (!showLocationInput) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setShowLocationInput(false); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [showLocationInput]);
 
   const openPanel = useCallback((place: Place) => {
     setPanelPlace(place);
-  }, []);
+    if (isMobile) setMobileMapOpen(true);
+  }, [isMobile]);
 
   const handlePinClick = useCallback((placeId: string) => {
     const place = places.find((p) => p.id === placeId) ?? null;
     if (place) openPanel(place);
   }, [places, openPanel]);
+
+  const closeMobileMap = useCallback(() => {
+    setMobileMapOpen(false);
+    setPanelPlace(null);
+  }, []);
 
   const categories = useMemo(() => {
     const cats = new Set(places.map((p) => p.category));
@@ -58,6 +134,34 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
     });
   }, [places, activeCategories, showUnvetted]);
 
+  const sortedPlaces = useMemo(() => {
+    const sorted = [...filteredPlaces];
+    if (sortBy === "distance" && userLocation) {
+      sorted.sort((a, b) => {
+        const locA = a.locations?.[0];
+        const locB = b.locations?.[0];
+        const dA = locA?.lat && locA?.lng ? haversineDistanceMi(userLocation.lat, userLocation.lng, locA.lat, locA.lng) : Infinity;
+        const dB = locB?.lat && locB?.lng ? haversineDistanceMi(userLocation.lat, userLocation.lng, locB.lat, locB.lng) : Infinity;
+        return dA - dB;
+      });
+    } else {
+      sorted.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return sorted;
+  }, [filteredPlaces, sortBy, userLocation]);
+
+  const placeDistances = useMemo(() => {
+    if (!userLocation) return {} as Record<string, string>;
+    const out: Record<string, string> = {};
+    filteredPlaces.forEach((place) => {
+      const loc = place.locations?.[0];
+      if (loc?.lat && loc?.lng) {
+        out[place.id] = formatDistanceMi(haversineDistanceMi(userLocation.lat, userLocation.lng, loc.lat, loc.lng));
+      }
+    });
+    return out;
+  }, [userLocation, filteredPlaces]);
+
   const mapPins = useMemo(() => {
     return filteredPlaces.flatMap((place) =>
       (place.locations ?? []).map((location) => ({ place, location }))
@@ -75,31 +179,13 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
             </Link>
             <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">{city.name}</h1>
           </div>
-          {/* Mobile view toggle */}
-          <div className="flex md:hidden gap-1 bg-[var(--color-surface-alt)] p-1 rounded-[var(--radius-md)]">
-            <button
-              onClick={() => setMobileView("list")}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-sm)] text-xs font-medium transition-colors",
-                mobileView === "list"
-                  ? "bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-[var(--shadow-sm)]"
-                  : "text-[var(--color-text-muted)]"
-              )}
-            >
-              <List size={13} /> List
-            </button>
-            <button
-              onClick={() => setMobileView("map")}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-sm)] text-xs font-medium transition-colors",
-                mobileView === "map"
-                  ? "bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-[var(--shadow-sm)]"
-                  : "text-[var(--color-text-muted)]"
-              )}
-            >
-              <Map size={13} /> Map
-            </button>
-          </div>
+          {/* Mobile map button */}
+          <button
+            onClick={() => setMobileMapOpen(true)}
+            className="flex md:hidden items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-medium border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors"
+          >
+            <Map size={13} /> Map
+          </button>
         </div>
       </header>
 
@@ -159,35 +245,115 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden w-full">
-        {/* List panel — fixed narrow width, map gets the rest */}
-        <div className={cn(
-          "w-72 shrink-0 overflow-y-auto p-3 border-r border-[var(--color-border)]",
-          mobileView === "map" ? "hidden md:block" : "block"
-        )}>
-          <p className="text-xs text-[var(--color-text-muted)] mb-2">
-            {filteredPlaces.length} {filteredPlaces.length === 1 ? "place" : "places"}
-          </p>
+        {/* List panel — full width on mobile, fixed narrow on desktop */}
+        <div className="relative w-full md:w-72 md:shrink-0 overflow-y-auto p-3 md:border-r md:border-[var(--color-border)]">
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <p className="text-xs text-[var(--color-text-muted)] shrink-0">
+              {filteredPlaces.length} {filteredPlaces.length === 1 ? "place" : "places"}
+            </p>
+            <div className="flex items-center gap-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "az" | "distance")}
+                className="text-xs text-[var(--color-text-muted)] bg-transparent border-none outline-none cursor-pointer"
+              >
+                <option value="az">A–Z</option>
+                {userLocation && <option value="distance">Distance</option>}
+              </select>
+              {userLocation ? (
+                <div className="flex items-center gap-1 min-w-0">
+                  <LocateFixed size={11} className="text-[var(--color-accent)] shrink-0" />
+                  <span className="text-xs text-[var(--color-text-muted)] truncate max-w-[90px]">{locationLabel}</span>
+                  <button onClick={clearLocation} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors shrink-0">
+                    <X size={11} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowLocationInput((v) => !v)}
+                  className={cn(
+                    "text-xs transition-colors",
+                    showLocationInput
+                      ? "text-[var(--color-accent)]"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+                  )}
+                >
+                  Set location
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Location popover */}
+          {showLocationInput && !userLocation && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowLocationInput(false)} />
+              <div className="absolute left-3 right-3 top-10 z-20 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-medium text-[var(--color-text-primary)]">Set a starting point</p>
+                <button onClick={() => setShowLocationInput(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors -mr-1">
+                  <X size={14} />
+                </button>
+              </div>
+              <form onSubmit={handleSetLocation} className="flex flex-col gap-2">
+                <input
+                  autoFocus
+                  value={locationInput}
+                  onChange={(e) => { setLocationInput(e.target.value); setLocationInputStatus("idle"); }}
+                  placeholder="City, neighborhood, or address…"
+                  className="w-full text-sm px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background)] outline-none focus:border-[var(--color-accent)] transition-colors placeholder:text-[var(--color-text-muted)]"
+                />
+                {locationInputStatus === "error" && (
+                  <p className="text-xs text-[var(--color-danger)]">Couldn't find that location — try being more specific.</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={locationInputStatus === "loading" || !locationInput.trim()}
+                  className="flex items-center justify-center gap-1.5 w-full py-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] text-white text-sm font-medium hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-50"
+                >
+                  {locationInputStatus === "loading" ? <Loader2 size={13} className="animate-spin" /> : <ArrowRight size={13} />}
+                  {locationInputStatus === "loading" ? "Locating…" : "Set location"}
+                </button>
+              </form>
+              <div className="flex items-center gap-2 my-3">
+                <div className="flex-1 h-px bg-[var(--color-border-subtle)]" />
+                <span className="text-xs text-[var(--color-text-muted)]">or</span>
+                <div className="flex-1 h-px bg-[var(--color-border-subtle)]" />
+              </div>
+              <button
+                onClick={() => { requestLocation(); setShowLocationInput(false); }}
+                disabled={locationStatus === "loading"}
+                className="flex items-center justify-center gap-1.5 w-full py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors disabled:opacity-50"
+              >
+                {locationStatus === "loading" ? <Loader2 size={13} className="animate-spin" /> : <LocateFixed size={13} />}
+                Use my location
+              </button>
+              {locationStatus === "denied" && (
+                <p className="text-xs text-[var(--color-text-muted)] text-center mt-2">Location access was denied.</p>
+              )}
+            </div>
+            </>
+          )}
+
           <div className="flex flex-col gap-1.5">
-            {filteredPlaces.map((place) => (
+            {sortedPlaces.map((place) => (
               <PlaceCard
                 key={place.id}
                 place={place}
-                isSelected={panelPlace?.id === place.id || hoveredPlaceId === place.id}
-                onHover={setHoveredPlaceId}
+                isSelected={!isMobile && (panelPlace?.id === place.id || hoveredPlaceId === place.id)}
+                distanceLabel={placeDistances[place.id]}
+                onHover={isMobile ? undefined : setHoveredPlaceId}
                 onClick={openPanel}
               />
             ))}
-            {filteredPlaces.length === 0 && (
+            {sortedPlaces.length === 0 && (
               <p className="text-sm text-[var(--color-text-muted)]">No places match the current filter.</p>
             )}
           </div>
         </div>
 
-        {/* Map panel — takes remaining space */}
-        <div className={cn(
-          "flex-1",
-          mobileView === "list" ? "hidden md:block" : "block"
-        )}>
+        {/* Map panel — desktop only */}
+        <div className="hidden md:block flex-1">
           <CityMap
             pins={mapPins}
             selectedPlaceId={panelPlace?.id ?? hoveredPlaceId}
@@ -198,10 +364,28 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
         </div>
       </div>
 
-      {panelPlace && (
+      {/* Desktop detail panel */}
+      {panelPlace && !isMobile && (
         <PlaceDetailPanel
           place={panelPlace}
           onClose={() => setPanelPlace(null)}
+        />
+      )}
+
+      {/* Mobile map modal */}
+      {mobileMapOpen && (
+        <MobileMapModal
+          city={city}
+          pins={mapPins}
+          focusedPlace={panelPlace}
+          onPinClick={handlePinClick}
+          onDismissPlace={() => setPanelPlace(null)}
+          onClose={closeMobileMap}
+          categories={categories}
+          activeCategories={activeCategories}
+          showUnvetted={showUnvetted}
+          onToggleCategory={toggleCategory}
+          onToggleShowUnvetted={() => setShowUnvetted((v) => !v)}
         />
       )}
     </div>

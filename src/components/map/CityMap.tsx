@@ -163,11 +163,11 @@ export function CityMap({ pins, selectedPlaceId, focusedPlaceId, onPinClick, onM
           onCloseClick={() => onPinClick?.(focusedPin.place.id)}
         >
           <div style={{ padding: "6px 8px" }}>
-            <p style={{ fontWeight: 600, fontSize: 13, margin: 0, whiteSpace: "nowrap" }}>
+            <p style={{ fontWeight: 600, fontSize: 13, margin: 0, whiteSpace: "nowrap", color: "var(--color-text-primary)" }}>
               {focusedPin.place.name}
             </p>
             {focusedPin.place.description && (
-              <p style={{ fontSize: 11, color: "#666", margin: "3px 0 0", maxWidth: 200 }}>
+              <p style={{ fontSize: 11, color: "var(--color-text-secondary)", margin: "3px 0 0", maxWidth: 200 }}>
                 {focusedPin.place.description.slice(0, 80)}
                 {focusedPin.place.description.length > 80 ? "…" : ""}
               </p>

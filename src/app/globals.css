@@ -47,6 +47,30 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #111110;
+    --color-surface: #1c1b1a;
+    --color-surface-alt: #252422;
+    --color-border: #333230;
+    --color-border-subtle: #2a2927;
+
+    --color-text-primary: #f5f4f2;
+    --color-text-secondary: #a8a29e;
+    --color-text-muted: #6b6560;
+
+    --color-accent: #4aa39c;
+    --color-accent-hover: #57b3ac;
+    --color-accent-light: #1a2f2e;
+    --color-accent-muted: #4a9e96;
+
+    --color-danger: #ef4444;
+    --color-danger-light: #2d1212;
+    --color-warning: #f59e0b;
+    --color-success: #22c55e;
+  }
+}
+
 /* Tighten Google Maps InfoWindow — remove excess padding and close button */
 .gm-style .gm-style-iw-c {
   padding: 0 !important;
@@ -58,11 +82,20 @@ body {
   padding: 0 !important;
 }
 .gm-style .gm-style-iw-tc::after {
-  background: white !important;
+  background: var(--color-surface) !important;
 }
 .gm-style button.gm-ui-hover-effect {
   display: none !important;
 }
 .gm-style .gm-style-iw-chr {
   display: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gm-style .gm-style-iw-c {
+    background-color: var(--color-surface) !important;
+  }
+  .gm-style .gm-style-iw-d {
+    color: var(--color-text-primary) !important;
+  }
 }

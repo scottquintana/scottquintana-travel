@@ -4,6 +4,7 @@ import type { Place } from "@/lib/types";
 interface PlaceCardProps {
   place: Place;
   isSelected?: boolean;
+  distanceLabel?: string;
   onHover?: (id: string | null) => void;
   onClick?: (place: Place) => void;
 }
@@ -14,7 +15,7 @@ const CATEGORY_DOT: Record<string, string> = {
   activity: "bg-[#2d9e4a]",
 };
 
-export function PlaceCard({ place, isSelected, onHover, onClick }: PlaceCardProps) {
+export function PlaceCard({ place, isSelected, distanceLabel, onHover, onClick }: PlaceCardProps) {
   const dotColor = CATEGORY_DOT[place.category] ?? "bg-gray-400";
   return (
     <button
@@ -34,9 +35,14 @@ export function PlaceCard({ place, isSelected, onHover, onClick }: PlaceCardProp
           <span className="text-sm font-medium text-[var(--color-text-primary)] leading-snug">
             {place.name}
           </span>
-          {place.vetted && (
-            <Check size={13} className="shrink-0 text-emerald-500 mt-0.5" />
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {distanceLabel && (
+              <span className="text-xs text-[var(--color-text-muted)]">{distanceLabel}</span>
+            )}
+            {place.vetted && (
+              <Check size={13} className="text-emerald-500" />
+            )}
+          </div>
         </div>
         {place.description && (
           <p className="mt-0.5 text-xs text-[var(--color-text-secondary)] leading-relaxed">

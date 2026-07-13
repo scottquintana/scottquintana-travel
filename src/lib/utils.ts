@@ -23,6 +23,21 @@ export function googleMapsUrl(lat: number, lng: number, label?: string): string 
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
+export function haversineDistanceMi(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 3958.8;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export function formatDistanceMi(mi: number): string {
+  if (mi < 0.1) return "< 0.1 mi";
+  if (mi < 10) return `${mi.toFixed(1)} mi`;
+  return `${Math.round(mi)} mi`;
+}
+
 export function appleMapsUrl(lat: number, lng: number, label?: string): string {
   const params = new URLSearchParams({ ll: `${lat},${lng}`, q: label || "" });
   return `https://maps.apple.com/?${params}`;
