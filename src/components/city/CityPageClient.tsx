@@ -382,6 +382,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
             pins={mapPins}
             selectedPlaceId={panelPlace?.id ?? hoveredPlaceId}
             focusedLocationId={focusedLocationId}
+            userLocation={userLocation}
             onPinClick={handlePinClick}
             onMapClick={closePanel}
           />
@@ -404,6 +405,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
           pins={mapPins}
           focusedPlace={panelPlace}
           focusedLocationId={focusedLocationId}
+          userLocation={userLocation}
           onPinClick={handlePinClick}
           onDismissPlace={closePanel}
           onClose={closeMobileMap}

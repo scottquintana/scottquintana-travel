@@ -231,6 +231,7 @@ export interface MobileMapModalProps {
   pins: MapPin[];
   focusedPlace: Place | null;
   focusedLocationId: string | null;
+  userLocation: { lat: number; lng: number } | null;
   onPinClick: (placeId: string, locationId: string) => void;
   onDismissPlace: () => void;
   onClose: () => void;
@@ -242,7 +243,7 @@ export interface MobileMapModalProps {
 }
 
 export function MobileMapModal({
-  city, pins, focusedPlace, focusedLocationId, onPinClick, onDismissPlace, onClose,
+  city, pins, focusedPlace, focusedLocationId, userLocation, onPinClick, onDismissPlace, onClose,
   categories, activeCategories, showUnvetted, onToggleCategory, onToggleShowUnvetted,
 }: MobileMapModalProps) {
   const [modalVisible, setModalVisible] = useState(false);
@@ -300,6 +301,7 @@ export function MobileMapModal({
           pins={pins}
           selectedPlaceId={focusedPlace?.id ?? null}
           focusedLocationId={focusedLocationId}
+          userLocation={userLocation}
           onPinClick={onPinClick}
           onMapClick={focusedPlace ? onDismissPlace : undefined}
         />

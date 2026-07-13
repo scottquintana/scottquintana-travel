@@ -15,6 +15,7 @@ interface CityMapProps {
   selectedPlaceId?: string | null;
   /** Explicitly focused location (click only) — triggers pan + InfoWindow */
   focusedLocationId?: string | null;
+  userLocation?: { lat: number; lng: number } | null;
   onPinClick?: (placeId: string, locationId: string) => void;
   onMapClick?: () => void;
 }
@@ -59,12 +60,14 @@ function fitAll(map: google.maps.Map, pins: MapPin[]) {
   map.fitBounds(bounds, 48);
 }
 
-export function CityMap({ pins, selectedPlaceId, focusedLocationId, onPinClick, onMapClick }: CityMapProps) {
+export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation, onPinClick, onMapClick }: CityMapProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   // Refs so focus/pan effects always see fresh values without extra re-runs
   const mapRef = useRef<google.maps.Map | null>(null);
   const pinsRef = useRef(pins);
   pinsRef.current = pins;
+  const focusedLocationIdRef = useRef(focusedLocationId);
+  focusedLocationIdRef.current = focusedLocationId;
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
@@ -79,10 +82,19 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, onPinClick, 
     setMap(null);
   }, []);
 
-  // Fit all pins once when the map first loads
+  // On load: zoom to focused location if one is already set, otherwise fit all pins
   useEffect(() => {
     if (!map) return;
-    fitAll(map, pinsRef.current);
+    const fid = focusedLocationIdRef.current;
+    if (fid) {
+      const pin = pinsRef.current.find((p) => p.location.id === fid);
+      if (pin) {
+        map.panTo({ lat: pin.location.lat, lng: pin.location.lng });
+        map.setZoom(15);
+      }
+    } else {
+      fitAll(map, pinsRef.current);
+    }
   }, [map]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pan to focused location; fitBounds when focus is cleared
@@ -91,7 +103,10 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, onPinClick, 
     if (!m) return;
     if (focusedLocationId) {
       const pin = pinsRef.current.find((p) => p.location.id === focusedLocationId);
-      if (pin) m.panTo({ lat: pin.location.lat, lng: pin.location.lng });
+      if (pin) {
+        m.panTo({ lat: pin.location.lat, lng: pin.location.lng });
+        if ((m.getZoom() ?? 0) < 15) m.setZoom(15);
+      }
     } else {
       fitAll(m, pinsRef.current);
     }
@@ -130,31 +145,55 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, onPinClick, 
       {pins.map(({ place, location }) => {
         const isSelected = selectedPlaceId === place.id;
         const size = isSelected ? 20 : 14;
+        const HIT = 36;
         return (
           <OverlayView
             key={location.id}
             position={{ lat: location.lat, lng: location.lng }}
             mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-            getPixelPositionOffset={() => ({ x: -size / 2, y: -size / 2 })}
+            getPixelPositionOffset={() => ({ x: -HIT / 2, y: -HIT / 2 })}
           >
             <div
               onClick={(e) => { e.stopPropagation(); onPinClick?.(place.id, location.id); }}
               title={place.name}
               style={{
-                width: size,
-                height: size,
-                borderRadius: "50%",
-                background: pinFill(place.category, isSelected),
-                border: "2.5px solid white",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                width: HIT,
+                height: HIT,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 cursor: "pointer",
                 position: "relative",
                 zIndex: isSelected ? 10 : 1,
               }}
-            />
+            >
+              <div
+                style={{
+                  width: size,
+                  height: size,
+                  borderRadius: "50%",
+                  background: pinFill(place.category, isSelected),
+                  border: "2.5px solid white",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                }}
+              />
+            </div>
           </OverlayView>
         );
       })}
+
+      {userLocation && (
+        <OverlayView
+          position={{ lat: userLocation.lat, lng: userLocation.lng }}
+          mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+          getPixelPositionOffset={() => ({ x: -12, y: -12 })}
+        >
+          <div style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+            <div className="animate-ping" style={{ position: "absolute", width: 20, height: 20, borderRadius: "50%", background: "rgba(66,133,244,0.35)" }} />
+            <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#4285F4", border: "2.5px solid white", boxShadow: "0 1px 5px rgba(0,0,0,0.35)", position: "relative" }} />
+          </div>
+        </OverlayView>
+      )}
 
       {focusedPin && (
         <InfoWindow
