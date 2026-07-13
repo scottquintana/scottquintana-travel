@@ -158,6 +158,7 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
             getPixelPositionOffset={() => ({ x: -HIT / 2, y: -HIT / 2 })}
           >
             <div
+              onTouchStart={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 pinJustClickedRef.current = true;
