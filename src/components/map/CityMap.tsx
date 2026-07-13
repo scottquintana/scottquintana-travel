@@ -62,6 +62,7 @@ function fitAll(map: google.maps.Map, pins: MapPin[]) {
 
 export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation, onPinClick, onMapClick }: CityMapProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [isPanning, setIsPanning] = useState(false);
   // Refs so focus/pan effects always see fresh values without extra re-runs
   const mapRef = useRef<google.maps.Map | null>(null);
   const pinsRef = useRef(pins);
@@ -70,6 +71,7 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
   focusedLocationIdRef.current = focusedLocationId;
   // Prevents map onClick from firing when a pin was just tapped
   const pinJustClickedRef = useRef(false);
+  const idleListenerRef = useRef<google.maps.MapsEventListener | null>(null);
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
@@ -101,15 +103,21 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
     }
   }, [map]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Pan to focused location on selection; do nothing on deselect (keep current view)
+  // Pan to focused location; hide other pins during animation to avoid flash
   useEffect(() => {
     const m = mapRef.current;
     if (!m || !focusedLocationId) return;
     const pin = pinsRef.current.find((p) => p.location.id === focusedLocationId);
-    if (pin) {
-      m.panTo({ lat: pin.location.lat, lng: pin.location.lng });
-      if ((m.getZoom() ?? 0) < 15) m.setZoom(15);
-    }
+    if (!pin) return;
+
+    if (idleListenerRef.current) google.maps.event.removeListener(idleListenerRef.current);
+    setIsPanning(true);
+    m.panTo({ lat: pin.location.lat, lng: pin.location.lng });
+    if ((m.getZoom() ?? 0) < 15) m.setZoom(15);
+    idleListenerRef.current = google.maps.event.addListenerOnce(m, "idle", () => {
+      setIsPanning(false);
+      idleListenerRef.current = null;
+    });
   }, [focusedLocationId]); // intentionally excludes map/pins — using refs
 
   if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
@@ -144,8 +152,10 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
     >
       {pins.map(({ place, location }) => {
         const isSelected = selectedPlaceId === place.id;
+        const isFocused = focusedLocationId === location.id;
         const size = isSelected ? 20 : 14;
         const HIT = 44;
+        const hidden = isPanning && !isFocused;
         return (
           <OverlayView
             key={location.id}
@@ -171,6 +181,9 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
                 cursor: "pointer",
                 position: "relative",
                 zIndex: isSelected ? 10 : 1,
+                opacity: hidden ? 0 : 1,
+                transition: hidden ? "none" : "opacity 0.15s ease",
+                pointerEvents: hidden ? "none" : "auto",
               }}
             >
               <div

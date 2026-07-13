@@ -1,10 +1,10 @@
 # scottquintana-travel
 
-Personal travel site at travel.scottquintana.com. A city-by-city guide to places worth visiting, with a map view and a lightweight admin panel.
+Personal travel site at travel.scottquintana.com. A city-by-city guide to places worth visiting, with list and map views and a lightweight admin panel.
 
 ## Stack
 
-- Next.js (App Router)
+- Next.js 16 (App Router + Turbopack)
 - Tailwind CSS v4
 - Supabase (Postgres + Storage)
 - Google Maps JavaScript API
@@ -16,44 +16,67 @@ npm install
 npm run dev
 ```
 
-### Required environment variables
+### Environment variables
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
+ADMIN_PASSWORD=
+GEOCODING_API_KEY=        # optional — separate key without referrer restrictions for server-side geocoding
 ```
+
+## Features
+
+- **Cities page** — searchable grid with place count per city
+- **City page** — split list + map on desktop; list-only with full-screen map modal on mobile
+- **Place cards** — category color, vetted indicator, distance from set location
+- **Multi-location places** — one DB entry, separate list card per location; each sorts by distance independently
+- **Distance** — set location via GPS or typed address; haversine distance shown per card, sorts the list
+- **Full place page** — `/{citySlug}/{placeSlug}` with description, recommendations, location + map links, website, socials, photos
+- **Dark mode** — automatic via `prefers-color-scheme`
+- **Admin** — city/place CRUD, bulk JSON import with auto-geocoding
 
 ## Project structure
 
 ```
 src/
   app/
-    (public)/         # City and place pages
-    admin/            # Admin panel (cities, places, import)
+    page.tsx                  # Cities home (server)
+    [citySlug]/page.tsx       # City page (server)
+    [citySlug]/[placeSlug]/   # Full place detail page
+    admin/                    # Admin panel
+    api/admin/                # login / logout / geocode routes
   components/
-    city/             # CityPageClient (list + map layout)
-    map/              # CityMap (Google Maps wrapper)
-    places/           # PlaceCard, PlaceDetailPanel
-    admin/            # ImportForm, InlineImportPlaceForm
+    city/
+      CitiesClient            # Searchable cities grid
+      CityPageClient          # List + map, all interaction state
+    map/
+      CityMap                 # Google Maps wrapper
+      MobileMapModal          # Full-screen map modal + detail sheet (mobile only)
+    places/
+      PlaceCard               # List row card
+      PlaceDetailPanel        # Desktop bottom strip
+      PlaceDetail             # Full place page layout
+    admin/
+      ImportForm              # Bulk JSON import
+      InlineImportPlaceForm   # Per-item review before saving
+    ui/                       # Button, Input, Badge, Label, Textarea
   lib/
-    supabase/         # Client and server Supabase instances
-    types.ts          # Shared types
-    utils.ts          # slugify, formatCategory, cn
-    geocode.ts        # Google geocoding helper
-data/                 # Local JSON files for import (gitignored)
+    types.ts
+    utils.ts                  # cn, slugify, haversineDistanceMi, formatDistanceMi, etc.
+    geocode.ts                # geocodeAddress() — calls server-side route
+data/                         # Local JSON import files (gitignored)
 ```
 
 ## Admin
 
-The admin panel lives at `/admin`. From there you can create cities, manage places, and import places from JSON.
+The admin panel lives at `/admin` (password-protected). From there you can create cities, manage places, and import places from JSON.
 
 ## Importing places
 
-Places are imported through the admin panel at `/admin/cities/[id]/import`. Paste or drop a JSON file in either single-place or bulk format.
-
-On save, addresses that start with a street number are automatically geocoded via the Google Maps API to get accurate coordinates.
+Paste or drop a JSON file at `/admin/cities/[id]/import`. Addresses starting with a street number are auto-geocoded on save. The import form also auto-geocodes on load, so coordinates are filled in before you review each entry.
 
 ### Single place
 
@@ -72,8 +95,8 @@ On save, addresses that start with a street number are automatically geocoded vi
   "locations": [
     {
       "address": "2121 E 7th Pl, Los Angeles, CA 90021",
-      "lat": 34.0403,
-      "lng": -118.2305,
+      "lat": 0,
+      "lng": 0,
       "notes": "Dinner only"
     }
   ]
@@ -85,8 +108,8 @@ On save, addresses that start with a street number are automatically geocoded vi
 ```json
 {
   "places": [
-    { ...same shape as above... },
-    { ...same shape as above... }
+    { "name": "...", "locations": [...] },
+    { "name": "...", "locations": [...] }
   ]
 }
 ```
@@ -96,21 +119,23 @@ On save, addresses that start with a street number are automatically geocoded vi
 | Field | Required | Notes |
 |---|---|---|
 | name | yes | |
-| category | no | food, drink, activity, other |
+| category | no | `food`, `drink`, `activity`, `other` |
 | description | no | |
 | vetted | no | boolean, default false |
 | website | no | |
-| socials | no | array of `{ platform, url }` |
-| recommendations | no | array of strings (dishes, items to order, etc.) |
+| socials | no | `[{ platform, url }]` |
+| recommendations | no | array of strings |
 | photos | no | array of URLs |
-| locations | yes | at least one required |
-| locations[].address | yes | street address |
-| locations[].lat | yes | used as fallback if geocoding fails |
-| locations[].lng | yes | used as fallback if geocoding fails |
-| locations[].notes | no | e.g. "parking in rear", "dinner only" |
-
-Categories `food` and `drink` show recommendations under "Order". Category `activity` shows them under "Don't miss".
+| locations | yes | one list card rendered per location |
+| locations[].address | yes | |
+| locations[].lat | no | auto-geocoded if address starts with a street number |
+| locations[].lng | no | auto-geocoded if address starts with a street number |
+| locations[].notes | no | shown on list card between name and description |
 
 ### Notes on coordinates
 
-If an address starts with a street number, coordinates are looked up automatically on save and override whatever lat/lng is in the JSON. For entries with a generic address like "Los Angeles, CA", the provided lat/lng is used as-is, so make sure it is accurate or the pin will be wrong on the map.
+If an address starts with a street number, coordinates are looked up automatically and override whatever lat/lng is in the JSON. For a generic address like "Los Angeles, CA", the provided lat/lng is used as-is — make sure it's accurate or the pin will be wrong.
+
+## Deployment
+
+Hosted on Vercel, auto-deploys on push to `main`. Custom domain `travel.scottquintana.com` — DNS via Netlify CNAME to `cname.vercel-dns.com`.
