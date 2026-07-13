@@ -101,18 +101,14 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
     }
   }, [map]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Pan to focused location; fitBounds when focus is cleared
+  // Pan to focused location on selection; do nothing on deselect (keep current view)
   useEffect(() => {
     const m = mapRef.current;
-    if (!m) return;
-    if (focusedLocationId) {
-      const pin = pinsRef.current.find((p) => p.location.id === focusedLocationId);
-      if (pin) {
-        m.panTo({ lat: pin.location.lat, lng: pin.location.lng });
-        if ((m.getZoom() ?? 0) < 15) m.setZoom(15);
-      }
-    } else {
-      fitAll(m, pinsRef.current);
+    if (!m || !focusedLocationId) return;
+    const pin = pinsRef.current.find((p) => p.location.id === focusedLocationId);
+    if (pin) {
+      m.panTo({ lat: pin.location.lat, lng: pin.location.lng });
+      if ((m.getZoom() ?? 0) < 15) m.setZoom(15);
     }
   }, [focusedLocationId]); // intentionally excludes map/pins — using refs
 
