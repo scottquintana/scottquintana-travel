@@ -62,13 +62,6 @@ export function PlaceDetail({ place, citySlug, onClose, isModal }: PlaceDetailPr
         </div>
       </div>
 
-      {/* Photos */}
-      {place.photos.length > 0 && (
-        <div className="relative h-56 w-full shrink-0">
-          <Image src={place.photos[0]} alt={place.name} fill className="object-cover" />
-        </div>
-      )}
-
       <div className="p-4 flex flex-col gap-4">
         {/* Title + badges */}
         <div>
@@ -119,16 +112,12 @@ export function PlaceDetail({ place, citySlug, onClose, isModal }: PlaceDetailPr
                   <div className="flex gap-2 ml-5">
                     <a
                       href={googleMapsUrl(loc.lat, loc.lng, place.name)}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="text-xs text-[var(--color-accent)] hover:underline flex items-center gap-1"
                     >
                       <ExternalLink size={11} /> Google Maps
                     </a>
                     <a
                       href={appleMapsUrl(loc.lat, loc.lng, place.name)}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="text-xs text-[var(--color-accent)] hover:underline flex items-center gap-1"
                     >
                       <ExternalLink size={11} /> Apple Maps
@@ -170,19 +159,32 @@ export function PlaceDetail({ place, citySlug, onClose, isModal }: PlaceDetailPr
           </div>
         )}
 
-        {/* Additional photos */}
-        {place.photos.length > 1 && (
+        {/* Photos */}
+        {place.photos.length > 0 && (
           <div>
-            <h2 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">Photos</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {place.photos.slice(1).map((photo, i) => (
-                <div key={i} className="relative aspect-square rounded-[var(--radius-md)] overflow-hidden">
-                  <Image src={photo} alt={`${place.name} photo ${i + 2}`} fill className="object-cover" />
-                </div>
+            <h2 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Photos</h2>
+            <div className="flex flex-col gap-3">
+              {place.photos.map((photo, i) => (
+                <Image
+                  key={i}
+                  src={photo}
+                  alt={`${place.name} photo ${i + 1}`}
+                  width={0}
+                  height={0}
+                  sizes="100vw"
+                  className="w-full h-auto rounded-[var(--radius-md)]"
+                />
               ))}
             </div>
           </div>
         )}
+
+        <a
+          href={`mailto:scott@scottquintana.com?subject=Issue with ${encodeURIComponent(place.name)}`}
+          className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+        >
+          Report an issue
+        </a>
       </div>
     </div>
   );

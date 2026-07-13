@@ -38,6 +38,8 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
   const isMobile = useIsMobile();
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
   const [panelPlace, setPanelPlace] = useState<Place | null>(null);
+  const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
+  const [focusedLocationId, setFocusedLocationId] = useState<string | null>(null);
   const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set());
   const [showUnvetted, setShowUnvetted] = useState(true);
   const [mobileMapOpen, setMobileMapOpen] = useState(false);
@@ -98,20 +100,28 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
     return () => document.removeEventListener("keydown", handler);
   }, [showLocationInput]);
 
-  const openPanel = useCallback((place: Place) => {
+  const closePanel = useCallback(() => {
+    setPanelPlace(null);
+    setSelectedItemKey(null);
+    setFocusedLocationId(null);
+  }, []);
+
+  const openPanel = useCallback((place: Place, itemKey: string, locationId: string) => {
     setPanelPlace(place);
+    setSelectedItemKey(itemKey);
+    setFocusedLocationId(locationId);
     if (isMobile) setMobileMapOpen(true);
   }, [isMobile]);
 
-  const handlePinClick = useCallback((placeId: string) => {
+  const handlePinClick = useCallback((placeId: string, locationId: string) => {
     const place = places.find((p) => p.id === placeId) ?? null;
-    if (place) openPanel(place);
+    if (place) openPanel(place, locationId, locationId);
   }, [places, openPanel]);
 
   const closeMobileMap = useCallback(() => {
     setMobileMapOpen(false);
-    setPanelPlace(null);
-  }, []);
+    closePanel();
+  }, [closePanel]);
 
   const categories = useMemo(() => {
     const cats = new Set(places.map((p) => p.category));
@@ -134,33 +144,43 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
     });
   }, [places, activeCategories, showUnvetted]);
 
-  const sortedPlaces = useMemo(() => {
-    const sorted = [...filteredPlaces];
+  const listItems = useMemo(() => {
+    type ListItem = { place: Place; locationNote?: string; locationLat?: number; locationLng?: number; key: string; distanceLabel?: string };
+    const items: ListItem[] = [];
+
+    for (const place of filteredPlaces) {
+      const locs = place.locations ?? [];
+      if (locs.length === 0) {
+        items.push({ place, key: place.id });
+      } else {
+        for (const loc of locs) {
+          const distanceLabel = userLocation && loc.lat && loc.lng
+            ? formatDistanceMi(haversineDistanceMi(userLocation.lat, userLocation.lng, loc.lat, loc.lng))
+            : undefined;
+          items.push({
+            place,
+            locationNote: loc.notes ?? undefined,
+            locationLat: loc.lat,
+            locationLng: loc.lng,
+            key: loc.id,
+            distanceLabel,
+          });
+        }
+      }
+    }
+
     if (sortBy === "distance" && userLocation) {
-      sorted.sort((a, b) => {
-        const locA = a.locations?.[0];
-        const locB = b.locations?.[0];
-        const dA = locA?.lat && locA?.lng ? haversineDistanceMi(userLocation.lat, userLocation.lng, locA.lat, locA.lng) : Infinity;
-        const dB = locB?.lat && locB?.lng ? haversineDistanceMi(userLocation.lat, userLocation.lng, locB.lat, locB.lng) : Infinity;
+      items.sort((a, b) => {
+        const dA = a.locationLat && a.locationLng ? haversineDistanceMi(userLocation.lat, userLocation.lng, a.locationLat, a.locationLng) : Infinity;
+        const dB = b.locationLat && b.locationLng ? haversineDistanceMi(userLocation.lat, userLocation.lng, b.locationLat, b.locationLng) : Infinity;
         return dA - dB;
       });
     } else {
-      sorted.sort((a, b) => a.name.localeCompare(b.name));
+      items.sort((a, b) => a.place.name.localeCompare(b.place.name));
     }
-    return sorted;
-  }, [filteredPlaces, sortBy, userLocation]);
 
-  const placeDistances = useMemo(() => {
-    if (!userLocation) return {} as Record<string, string>;
-    const out: Record<string, string> = {};
-    filteredPlaces.forEach((place) => {
-      const loc = place.locations?.[0];
-      if (loc?.lat && loc?.lng) {
-        out[place.id] = formatDistanceMi(haversineDistanceMi(userLocation.lat, userLocation.lng, loc.lat, loc.lng));
-      }
-    });
-    return out;
-  }, [userLocation, filteredPlaces]);
+    return items;
+  }, [filteredPlaces, sortBy, userLocation]);
 
   const mapPins = useMemo(() => {
     return filteredPlaces.flatMap((place) =>
@@ -301,7 +321,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
                   value={locationInput}
                   onChange={(e) => { setLocationInput(e.target.value); setLocationInputStatus("idle"); }}
                   placeholder="City, neighborhood, or address…"
-                  className="w-full text-sm px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background)] outline-none focus:border-[var(--color-accent)] transition-colors placeholder:text-[var(--color-text-muted)]"
+                  className="w-full text-base px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background)] outline-none focus:border-[var(--color-accent)] transition-colors placeholder:text-[var(--color-text-muted)]"
                 />
                 {locationInputStatus === "error" && (
                   <p className="text-xs text-[var(--color-danger)]">Couldn't find that location — try being more specific.</p>
@@ -336,17 +356,21 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
           )}
 
           <div className="flex flex-col gap-1.5">
-            {sortedPlaces.map((place) => (
-              <PlaceCard
-                key={place.id}
-                place={place}
-                isSelected={!isMobile && (panelPlace?.id === place.id || hoveredPlaceId === place.id)}
-                distanceLabel={placeDistances[place.id]}
-                onHover={isMobile ? undefined : setHoveredPlaceId}
-                onClick={openPanel}
-              />
-            ))}
-            {sortedPlaces.length === 0 && (
+            {listItems.map(({ place, locationNote, distanceLabel, key, locationLat, locationLng }) => {
+              const locationId = locationLat !== undefined ? key : (place.locations?.[0]?.id ?? key);
+              return (
+                <PlaceCard
+                  key={key}
+                  place={place}
+                  locationNote={locationNote}
+                  isSelected={!isMobile && (selectedItemKey === key || (!selectedItemKey && hoveredPlaceId === place.id))}
+                  distanceLabel={distanceLabel}
+                  onHover={isMobile ? undefined : setHoveredPlaceId}
+                  onClick={() => openPanel(place, key, locationId)}
+                />
+              );
+            })}
+            {listItems.length === 0 && (
               <p className="text-sm text-[var(--color-text-muted)]">No places match the current filter.</p>
             )}
           </div>
@@ -357,9 +381,9 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
           <CityMap
             pins={mapPins}
             selectedPlaceId={panelPlace?.id ?? hoveredPlaceId}
-            focusedPlaceId={panelPlace?.id ?? null}
+            focusedLocationId={focusedLocationId}
             onPinClick={handlePinClick}
-            onMapClick={() => setPanelPlace(null)}
+            onMapClick={closePanel}
           />
         </div>
       </div>
@@ -369,7 +393,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
         <PlaceDetailPanel
           place={panelPlace}
           citySlug={city.slug}
-          onClose={() => setPanelPlace(null)}
+          onClose={closePanel}
         />
       )}
 
@@ -379,8 +403,9 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
           city={city}
           pins={mapPins}
           focusedPlace={panelPlace}
+          focusedLocationId={focusedLocationId}
           onPinClick={handlePinClick}
-          onDismissPlace={() => setPanelPlace(null)}
+          onDismissPlace={closePanel}
           onClose={closeMobileMap}
           categories={categories}
           activeCategories={activeCategories}

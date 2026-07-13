@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -48,6 +48,18 @@ export function InlineImportPlaceForm({ city, prefill, onSaved }: InlineImportPl
   const [recInput, setRecInput] = useState("");
   const [photoInput, setPhotoInput] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  useEffect(() => {
+    const autoGeocode = async () => {
+      for (let i = 0; i < locations.length; i++) {
+        const loc = locations[i];
+        if (loc.address && loc.lat === 0 && loc.lng === 0) {
+          await geocodeLocation(i);
+        }
+      }
+    };
+    autoGeocode();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const geocodeLocation = async (i: number) => {
     const addr = locations[i]?.address;

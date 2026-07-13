@@ -13,9 +13,9 @@ interface CityMapProps {
   pins: MapPin[];
   /** Highlighted pin (hover or click) — controls color/size only */
   selectedPlaceId?: string | null;
-  /** Explicitly focused pin (click only) — triggers pan + InfoWindow */
-  focusedPlaceId?: string | null;
-  onPinClick?: (placeId: string) => void;
+  /** Explicitly focused location (click only) — triggers pan + InfoWindow */
+  focusedLocationId?: string | null;
+  onPinClick?: (placeId: string, locationId: string) => void;
   onMapClick?: () => void;
 }
 
@@ -59,7 +59,7 @@ function fitAll(map: google.maps.Map, pins: MapPin[]) {
   map.fitBounds(bounds, 48);
 }
 
-export function CityMap({ pins, selectedPlaceId, focusedPlaceId, onPinClick, onMapClick }: CityMapProps) {
+export function CityMap({ pins, selectedPlaceId, focusedLocationId, onPinClick, onMapClick }: CityMapProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   // Refs so focus/pan effects always see fresh values without extra re-runs
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -85,17 +85,17 @@ export function CityMap({ pins, selectedPlaceId, focusedPlaceId, onPinClick, onM
     fitAll(map, pinsRef.current);
   }, [map]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Pan to focused pin; fitBounds when focus is cleared
+  // Pan to focused location; fitBounds when focus is cleared
   useEffect(() => {
     const m = mapRef.current;
     if (!m) return;
-    if (focusedPlaceId) {
-      const pin = pinsRef.current.find((p) => p.place.id === focusedPlaceId);
+    if (focusedLocationId) {
+      const pin = pinsRef.current.find((p) => p.location.id === focusedLocationId);
       if (pin) m.panTo({ lat: pin.location.lat, lng: pin.location.lng });
     } else {
       fitAll(m, pinsRef.current);
     }
-  }, [focusedPlaceId]); // intentionally excludes map/pins — using refs
+  }, [focusedLocationId]); // intentionally excludes map/pins — using refs
 
   if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
     return (
@@ -113,8 +113,8 @@ export function CityMap({ pins, selectedPlaceId, focusedPlaceId, onPinClick, onM
     );
   }
 
-  const focusedPin = focusedPlaceId
-    ? pins.find(({ place }) => place.id === focusedPlaceId)
+  const focusedPin = focusedLocationId
+    ? pins.find(({ location }) => location.id === focusedLocationId)
     : null;
 
   return (
@@ -138,7 +138,7 @@ export function CityMap({ pins, selectedPlaceId, focusedPlaceId, onPinClick, onM
             getPixelPositionOffset={() => ({ x: -size / 2, y: -size / 2 })}
           >
             <div
-              onClick={(e) => { e.stopPropagation(); onPinClick?.(place.id); }}
+              onClick={(e) => { e.stopPropagation(); onPinClick?.(place.id, location.id); }}
               title={place.name}
               style={{
                 width: size,
@@ -160,7 +160,7 @@ export function CityMap({ pins, selectedPlaceId, focusedPlaceId, onPinClick, onM
         <InfoWindow
           position={{ lat: focusedPin.location.lat, lng: focusedPin.location.lng }}
           options={{ disableAutoPan: true, pixelOffset: new google.maps.Size(0, -18) }}
-          onCloseClick={() => onPinClick?.(focusedPin.place.id)}
+          onCloseClick={() => onPinClick?.(focusedPin.place.id, focusedPin.location.id)}
         >
           <div style={{ padding: "6px 8px" }}>
             <p style={{ fontWeight: 600, fontSize: 13, margin: 0, whiteSpace: "nowrap", color: "var(--color-text-primary)" }}>

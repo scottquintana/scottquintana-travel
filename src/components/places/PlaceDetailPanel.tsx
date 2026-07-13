@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { formatCategory, cn } from "@/lib/utils";
 import { X, ExternalLink, MapPin, Check, Copy, Map } from "lucide-react";
-import { useRef, useEffect, useState } from "react";
+import { useState } from "react";
 import type { Place } from "@/lib/types";
 
 interface PlaceDetailPanelProps {
@@ -32,7 +32,7 @@ function AddressActions({ address }: { address: string }) {
 
   const openMaps = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, "_blank", "noopener,noreferrer");
+    window.location.href = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
   };
 
   return (
@@ -66,23 +66,6 @@ export function PlaceDetailPanel({ place, citySlug, onClose }: PlaceDetailPanelP
   const firstLocation = place.locations?.[0];
   const photo = place.photos?.[0];
 
-  const [isOverflowing, setIsOverflowing] = useState(false);
-  const descRef = useRef<HTMLParagraphElement>(null);
-
-  // Reset when place changes
-  useEffect(() => {
-    setIsOverflowing(false);
-  }, [place.id]);
-
-  // Detect if description overflows the clamped container
-  useEffect(() => {
-    const el = descRef.current;
-    if (!el) return;
-    const id = requestAnimationFrame(() => {
-      setIsOverflowing(el.scrollHeight > el.clientHeight + 2);
-    });
-    return () => cancelAnimationFrame(id);
-  }, [place.id, place.description]);
 
   return (
     <>
@@ -130,26 +113,21 @@ export function PlaceDetailPanel({ place, citySlug, onClose }: PlaceDetailPanelP
         {/* Description */}
         {place.description && (
           <div className="px-4 py-1 md:p-0 min-w-0 md:max-w-sm">
-            <p
-              ref={descRef}
-              className="text-xs text-[var(--color-text-secondary)] leading-relaxed md:line-clamp-3"
-            >
+            <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed md:line-clamp-3">
               {place.description}
             </p>
-            {isOverflowing && (
-              <Link
-                href={`/${citySlug}/${place.slug}`}
-                className="text-xs text-[var(--color-accent)] hover:underline mt-1 inline-block"
-              >
-                Read more →
-              </Link>
-            )}
+            <Link
+              href={`/${citySlug}/${place.slug}`}
+              className="text-xs text-[var(--color-accent)] hover:underline mt-1 inline-block"
+            >
+              Read more →
+            </Link>
           </div>
         )}
 
         {/* Recommendations */}
         {place.recommendations && place.recommendations.length > 0 && (
-          <div className="px-4 py-1 md:p-0 md:shrink-0">
+          <div className="px-4 py-1 md:p-0 md:shrink-0 md:max-w-[160px]">
             <div className="flex flex-wrap gap-1">
               {place.recommendations.map((r, i) => (
                 <Badge key={i} variant="accent">{r}</Badge>

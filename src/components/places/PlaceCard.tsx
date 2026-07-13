@@ -3,6 +3,7 @@ import type { Place } from "@/lib/types";
 
 interface PlaceCardProps {
   place: Place;
+  locationNote?: string;
   isSelected?: boolean;
   distanceLabel?: string;
   onHover?: (id: string | null) => void;
@@ -15,7 +16,7 @@ const CATEGORY_DOT: Record<string, string> = {
   activity: "bg-[#2d9e4a]",
 };
 
-export function PlaceCard({ place, isSelected, distanceLabel, onHover, onClick }: PlaceCardProps) {
+export function PlaceCard({ place, locationNote, isSelected, distanceLabel, onHover, onClick }: PlaceCardProps) {
   const dotColor = CATEGORY_DOT[place.category] ?? "bg-gray-400";
   return (
     <button
@@ -44,6 +45,11 @@ export function PlaceCard({ place, isSelected, distanceLabel, onHover, onClick }
             )}
           </div>
         </div>
+        {locationNote && (
+          <p className="mt-0.5 text-xs text-[var(--color-text-muted)] italic leading-snug">
+            {locationNote}
+          </p>
+        )}
         {place.description && (
           <p className="mt-0.5 text-xs text-[var(--color-text-secondary)] leading-relaxed">
             {place.description}

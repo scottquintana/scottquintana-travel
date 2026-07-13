@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { X, MapPin, Copy, Check, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 import { CityMap } from "@/components/map/CityMap";
 import { formatCategory, cn } from "@/lib/utils";
 import type { City, Place, PlaceLocation } from "@/lib/types";
@@ -43,7 +42,7 @@ function AddressActions({ address }: { address: string }) {
 
   const openMaps = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, "_blank", "noopener,noreferrer");
+    window.location.href = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
   };
 
   return (
@@ -121,7 +120,6 @@ function MobileDetailSheet({ place, citySlug, visible, onDismiss }: { place: Pla
   };
 
   const firstLocation = place.locations?.[0];
-  const photo = place.photos?.[0];
   const dotColor = CATEGORY_DOT[place.category] ?? "bg-gray-400";
   const textColor = CATEGORY_TEXT_COLOR[place.category] ?? "text-[var(--color-text-muted)]";
 
@@ -189,13 +187,6 @@ function MobileDetailSheet({ place, citySlug, visible, onDismiss }: { place: Pla
           <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed mb-4">{place.description}</p>
         )}
 
-        {/* Photo */}
-        {photo && (
-          <div className="relative h-48 w-full rounded-[var(--radius-lg)] overflow-hidden mb-4">
-            <Image src={photo} alt={place.name} fill className="object-cover" />
-          </div>
-        )}
-
         {/* Recommendations */}
         {place.recommendations && place.recommendations.length > 0 && (
           <div className="mb-4">
@@ -239,7 +230,8 @@ export interface MobileMapModalProps {
   city: City;
   pins: MapPin[];
   focusedPlace: Place | null;
-  onPinClick: (placeId: string) => void;
+  focusedLocationId: string | null;
+  onPinClick: (placeId: string, locationId: string) => void;
   onDismissPlace: () => void;
   onClose: () => void;
   categories: string[];
@@ -250,7 +242,7 @@ export interface MobileMapModalProps {
 }
 
 export function MobileMapModal({
-  city, pins, focusedPlace, onPinClick, onDismissPlace, onClose,
+  city, pins, focusedPlace, focusedLocationId, onPinClick, onDismissPlace, onClose,
   categories, activeCategories, showUnvetted, onToggleCategory, onToggleShowUnvetted,
 }: MobileMapModalProps) {
   const [modalVisible, setModalVisible] = useState(false);
@@ -307,7 +299,7 @@ export function MobileMapModal({
         <CityMap
           pins={pins}
           selectedPlaceId={focusedPlace?.id ?? null}
-          focusedPlaceId={focusedPlace?.id ?? null}
+          focusedLocationId={focusedLocationId}
           onPinClick={onPinClick}
           onMapClick={focusedPlace ? onDismissPlace : undefined}
         />
