@@ -10,6 +10,12 @@ import { Map, List } from "lucide-react";
 import type { City, Place } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+const CATEGORY_COLORS: Record<string, string> = {
+  food: "#e07040",
+  drink: "#7c4fc4",
+  activity: "#2d9e4a",
+};
+
 interface CityPageClientProps {
   city: City;
   places: Place[];
@@ -18,7 +24,7 @@ interface CityPageClientProps {
 export function CityPageClient({ city, places }: CityPageClientProps) {
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
   const [panelPlace, setPanelPlace] = useState<Place | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set());
   const [showUnvetted, setShowUnvetted] = useState(true);
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
 
@@ -36,13 +42,21 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
     return Array.from(cats).sort();
   }, [places]);
 
+  const toggleCategory = useCallback((cat: string) => {
+    setActiveCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat); else next.add(cat);
+      return next;
+    });
+  }, []);
+
   const filteredPlaces = useMemo(() => {
     return places.filter((p) => {
-      if (activeCategory && p.category !== activeCategory) return false;
+      if (activeCategories.size > 0 && !activeCategories.has(p.category)) return false;
       if (!showUnvetted && !p.vetted) return false;
       return true;
     });
-  }, [places, activeCategory, showUnvetted]);
+  }, [places, activeCategories, showUnvetted]);
 
   const mapPins = useMemo(() => {
     return filteredPlaces.flatMap((place) =>
@@ -101,44 +115,45 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
       {/* Filter bar */}
       <div className="shrink-0 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-4 py-2">
         <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto">
-          <button
-            onClick={() => setActiveCategory(null)}
-            className={cn(
-              "shrink-0 text-xs px-3 py-1 rounded-[var(--radius-full)] border transition-colors",
-              activeCategory === null
-                ? "bg-[var(--color-accent)] text-white border-[var(--color-accent)]"
-                : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent-muted)]"
-            )}
-          >
-            All
-          </button>
-          {categories.map((cat) => (
+          {categories.map((cat) => {
+            const active = activeCategories.has(cat);
+            const dotColor = CATEGORY_COLORS[cat] ?? "#6b7280";
+            return (
+              <button
+                key={cat}
+                onClick={() => toggleCategory(cat)}
+                className={cn(
+                  "shrink-0 flex items-center gap-1.5 text-xs px-3 py-1 rounded-[var(--radius-full)] border transition-colors capitalize",
+                  active
+                    ? "bg-[var(--color-surface-alt)] text-[var(--color-text-primary)] border-[var(--color-border)] font-medium shadow-[var(--shadow-sm)]"
+                    : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent-muted)]"
+                )}
+              >
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: dotColor, opacity: active ? 1 : 0.45 }}
+                />
+                {formatCategory(cat)}
+              </button>
+            );
+          })}
+          {activeCategories.size > 0 && (
             <button
-              key={cat}
-              onClick={() => setActiveCategory(cat === activeCategory ? null : cat)}
-              className={cn(
-                "shrink-0 text-xs px-3 py-1 rounded-[var(--radius-full)] border transition-colors capitalize",
-                activeCategory === cat
-                  ? "bg-[var(--color-accent)] text-white border-[var(--color-accent)]"
-                  : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent-muted)]"
-              )}
+              onClick={() => setActiveCategories(new Set())}
+              className="shrink-0 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
-              {formatCategory(cat)}
+              Clear
             </button>
-          ))}
-          <div className="ml-auto shrink-0">
-            <button
-              onClick={() => setShowUnvetted((v) => !v)}
-              className={cn(
-                "text-xs px-3 py-1 rounded-[var(--radius-full)] border transition-colors",
-                !showUnvetted
-                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                  : "border-[var(--color-border)] text-[var(--color-text-muted)]"
-              )}
-            >
-              {showUnvetted ? "Hide unvetted" : "Show unvetted"}
-            </button>
-          </div>
+          )}
+          <label className="ml-auto shrink-0 flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={!showUnvetted}
+              onChange={(e) => setShowUnvetted(!e.target.checked)}
+              className="w-3.5 h-3.5 rounded accent-[var(--color-accent)] cursor-pointer"
+            />
+            <span className="text-xs text-[var(--color-text-muted)]">Vetted only</span>
+          </label>
         </div>
       </div>
 
@@ -178,6 +193,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
             selectedPlaceId={panelPlace?.id ?? hoveredPlaceId}
             focusedPlaceId={panelPlace?.id ?? null}
             onPinClick={handlePinClick}
+            onMapClick={() => setPanelPlace(null)}
           />
         </div>
       </div>

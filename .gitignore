@@ -37,3 +37,6 @@ next-env.d.ts
 
 # local import data
 /data
+
+# claude context (not for repo)
+CLAUDE.md

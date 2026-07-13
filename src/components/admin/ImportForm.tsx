@@ -119,7 +119,8 @@ export function ImportForm({ city }: ImportFormProps) {
       const locs = await Promise.all(rawLocs.map(async (l) => {
         let lat = Number(l.lat);
         let lng = Number(l.lng);
-        if (isSpecificAddress(l.address)) {
+        // Only geocode if no explicit coords were provided in the payload
+        if (isSpecificAddress(l.address) && !(lat && lng)) {
           const coords = await geocodeAddress(l.address);
           if (coords) { lat = coords.lat; lng = coords.lng; }
         }

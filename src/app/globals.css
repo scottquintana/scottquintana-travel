@@ -63,3 +63,6 @@ body {
 .gm-style button.gm-ui-hover-effect {
   display: none !important;
 }
+.gm-style .gm-style-iw-chr {
+  display: none !important;
+}

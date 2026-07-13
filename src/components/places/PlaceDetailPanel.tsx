@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { Badge } from "@/components/ui/Badge";
 import { formatCategory } from "@/lib/utils";
-import { X, ExternalLink, MapPin, Check } from "lucide-react";
+import { X, ExternalLink, MapPin, Check, Copy, Map } from "lucide-react";
+import { useState } from "react";
 import type { Place } from "@/lib/types";
 
 interface PlaceDetailPanelProps {
@@ -17,9 +18,49 @@ const CATEGORY_DOT: Record<string, string> = {
   activity: "bg-[#2d9e4a]",
 };
 
+function AddressActions({ address }: { address: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await navigator.clipboard.writeText(address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const openMaps = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <div className="flex items-start gap-1.5 min-w-0">
+      <MapPin size={11} className="text-[var(--color-text-muted)] shrink-0 mt-0.5" />
+      <span className="text-xs text-[var(--color-text-muted)] leading-snug">{address}</span>
+      <div className="flex items-center gap-1 shrink-0 ml-1">
+        <button
+          onClick={copy}
+          title="Copy address"
+          className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] transition-colors"
+        >
+          {copied ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+        </button>
+        <button
+          onClick={openMaps}
+          title="Open in Google Maps"
+          className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] transition-colors"
+        >
+          <Map size={11} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function PlaceDetailPanel({ place, onClose }: PlaceDetailPanelProps) {
   const dotColor = CATEGORY_DOT[place.category] ?? "bg-gray-400";
   const firstLocation = place.locations?.[0];
+  const photo = place.photos?.[0];
 
   return (
     <>
@@ -29,31 +70,36 @@ export function PlaceDetailPanel({ place, onClose }: PlaceDetailPanelProps) {
         onClick={onClose}
       />
 
-      {/* Mobile: full bottom sheet / Desktop: slim bottom strip */}
+      {/* Mobile: bottom sheet / Desktop: slim bottom strip */}
       <div className="fixed z-50 bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] shadow-[var(--shadow-lg)]
         rounded-t-2xl md:rounded-none
         max-h-[72vh] md:max-h-none
         overflow-y-auto md:overflow-visible
-        flex flex-col md:flex-row md:items-center md:gap-6 md:px-6 md:py-3.5
+        flex flex-col md:flex-row md:items-center md:gap-5 md:px-4 md:py-2.5
       ">
 
         {/* Mobile drag handle */}
         <div className="w-8 h-1 bg-[var(--color-border)] rounded-full mx-auto mt-3 mb-1 md:hidden" />
 
-        {/* Photo — mobile only */}
-        {place.photos && place.photos.length > 0 && (
-          <div className="relative h-44 w-full md:hidden shrink-0">
-            <Image src={place.photos[0]} alt={place.name} fill className="object-cover" />
-          </div>
+        {/* Photo — full width on mobile, small thumbnail on desktop */}
+        {photo && (
+          <>
+            <div className="relative h-44 w-full md:hidden shrink-0">
+              <Image src={photo} alt={place.name} fill className="object-cover" />
+            </div>
+            <div className="hidden md:block relative w-12 h-12 shrink-0 rounded-[var(--radius-md)] overflow-hidden border border-[var(--color-border)]">
+              <Image src={photo} alt={place.name} fill className="object-cover" />
+            </div>
+          </>
         )}
 
         {/* Identity */}
         <div className="flex items-center gap-2.5 px-4 pt-3 pb-1 md:p-0 md:shrink-0">
-          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${dotColor}`} />
+          <div className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`} />
           <div>
             <div className="flex items-center gap-1.5">
-              <p className="font-semibold text-sm text-[var(--color-text-primary)] leading-snug">{place.name}</p>
-              {place.vetted && <Check size={13} className="text-emerald-500 shrink-0" />}
+              <p className="font-semibold text-sm text-[var(--color-text-primary)] leading-snug whitespace-nowrap">{place.name}</p>
+              {place.vetted && <Check size={12} className="text-emerald-500 shrink-0" />}
             </div>
             <Badge variant="category" className="mt-0.5">{formatCategory(place.category)}</Badge>
           </div>
@@ -64,7 +110,7 @@ export function PlaceDetailPanel({ place, onClose }: PlaceDetailPanelProps) {
 
         {/* Description */}
         {place.description && (
-          <p className="flex-1 text-xs text-[var(--color-text-secondary)] leading-relaxed px-4 py-1 md:p-0 md:line-clamp-2 min-w-0">
+          <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed px-4 py-1 md:p-0 md:line-clamp-2 md:max-w-xs min-w-0">
             {place.description}
           </p>
         )}
@@ -80,19 +126,9 @@ export function PlaceDetailPanel({ place, onClose }: PlaceDetailPanelProps) {
           </div>
         )}
 
-        {/* Location + Website — desktop shows inline, mobile shows stacked */}
-        <div className="flex flex-col gap-1 px-4 py-2 md:p-0 md:shrink-0 md:flex-row md:items-center md:gap-4">
-          {firstLocation && (
-            <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(firstLocation.address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
-            >
-              <MapPin size={11} className="shrink-0" />
-              <span className="md:max-w-[180px] truncate">{firstLocation.address}</span>
-            </a>
-          )}
+        {/* Address + website */}
+        <div className="flex flex-col gap-2 px-4 py-2 md:p-0 md:shrink-0 md:max-w-[260px]">
+          {firstLocation && <AddressActions address={firstLocation.address} />}
           {place.website && (
             <a
               href={place.website}
@@ -100,8 +136,8 @@ export function PlaceDetailPanel({ place, onClose }: PlaceDetailPanelProps) {
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs text-[var(--color-accent)] hover:underline"
             >
-              <ExternalLink size={11} />
-              {place.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+              <ExternalLink size={11} className="shrink-0" />
+              <span className="truncate">{place.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</span>
             </a>
           )}
         </div>
@@ -109,7 +145,7 @@ export function PlaceDetailPanel({ place, onClose }: PlaceDetailPanelProps) {
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 md:static md:shrink-0 p-1.5 rounded-[var(--radius-md)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] transition-colors"
+          className="absolute top-3 right-3 md:static md:ml-auto md:shrink-0 p-1.5 rounded-[var(--radius-md)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] transition-colors"
           aria-label="Close"
         >
           <X size={15} />

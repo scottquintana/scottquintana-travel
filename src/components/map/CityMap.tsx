@@ -1,7 +1,6 @@
-/// <reference types="@types/google.maps" />
 "use client";
 
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, OverlayView, InfoWindow } from "@react-google-maps/api";
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { Place, PlaceLocation } from "@/lib/types";
 
@@ -17,6 +16,7 @@ interface CityMapProps {
   /** Explicitly focused pin (click only) — triggers pan + InfoWindow */
   focusedPlaceId?: string | null;
   onPinClick?: (placeId: string) => void;
+  onMapClick?: () => void;
 }
 
 const mapContainerStyle = { width: "100%", height: "100%" };
@@ -59,7 +59,7 @@ function fitAll(map: google.maps.Map, pins: MapPin[]) {
   map.fitBounds(bounds, 48);
 }
 
-export function CityMap({ pins, selectedPlaceId, focusedPlaceId, onPinClick }: CityMapProps) {
+export function CityMap({ pins, selectedPlaceId, focusedPlaceId, onPinClick, onMapClick }: CityMapProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   // Refs so focus/pan effects always see fresh values without extra re-runs
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -125,25 +125,34 @@ export function CityMap({ pins, selectedPlaceId, focusedPlaceId, onPinClick }: C
       options={mapOptions}
       onLoad={onLoad}
       onUnmount={onUnmount}
+      onClick={onMapClick}
     >
       {pins.map(({ place, location }) => {
         const isSelected = selectedPlaceId === place.id;
+        const size = isSelected ? 20 : 14;
         return (
-          <Marker
+          <OverlayView
             key={location.id}
             position={{ lat: location.lat, lng: location.lng }}
-            title={place.name}
-            onClick={() => onPinClick?.(place.id)}
-            icon={{
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: isSelected ? 10 : 7,
-              fillColor: pinFill(place.category, isSelected),
-              fillOpacity: 1,
-              strokeWeight: 2.5,
-              strokeColor: "#ffffff",
-            }}
-            zIndex={isSelected ? 10 : 1}
-          />
+            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            getPixelPositionOffset={() => ({ x: -size / 2, y: -size / 2 })}
+          >
+            <div
+              onClick={(e) => { e.stopPropagation(); onPinClick?.(place.id); }}
+              title={place.name}
+              style={{
+                width: size,
+                height: size,
+                borderRadius: "50%",
+                background: pinFill(place.category, isSelected),
+                border: "2.5px solid white",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                cursor: "pointer",
+                position: "relative",
+                zIndex: isSelected ? 10 : 1,
+              }}
+            />
+          </OverlayView>
         );
       })}
 

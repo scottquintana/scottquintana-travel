@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/Badge";
 import { slugify } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_CATEGORIES } from "@/lib/types";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, LocateFixed, Map, Check } from "lucide-react";
 import type { City, Place, PlaceLocation, Social } from "@/lib/types";
+import { geocodeAddress, isSpecificAddress } from "@/lib/geocode";
 
 interface PlaceFormProps {
   cities: City[];
@@ -63,6 +64,25 @@ export function PlaceForm({ cities, place }: PlaceFormProps) {
       setPhotos((p) => [...p, val]);
       setPhotoInput("");
     }
+  };
+
+  const [geocodingIdx, setGeocodingIdx] = useState<number | null>(null);
+  const [geocodeStatus, setGeocodeStatus] = useState<Record<number, "ok" | "fail">>({});
+
+  const geocodeLocation = async (i: number) => {
+    const addr = locations[i]?.address;
+    if (!addr || !isSpecificAddress(addr)) return;
+    setGeocodingIdx(i);
+    setGeocodeStatus((s) => ({ ...s, [i]: undefined as unknown as "ok" }));
+    const coords = await geocodeAddress(addr);
+    if (coords) {
+      updateLocation(i, "lat", coords.lat);
+      updateLocation(i, "lng", coords.lng);
+      setGeocodeStatus((s) => ({ ...s, [i]: "ok" }));
+    } else {
+      setGeocodeStatus((s) => ({ ...s, [i]: "fail" }));
+    }
+    setGeocodingIdx(null);
   };
 
   const addLocation = () => {
@@ -309,11 +329,50 @@ export function PlaceForm({ cities, place }: PlaceFormProps) {
               )}
             </div>
             <div className="flex flex-col gap-2">
-              <Input placeholder="Address" value={loc.address} onChange={(e) => updateLocation(i, "address", e.target.value)} />
-              <div className="grid grid-cols-2 gap-2">
-                <Input placeholder="Latitude" type="number" step="any" value={loc.lat || ""} onChange={(e) => updateLocation(i, "lat", parseFloat(e.target.value) || 0)} />
-                <Input placeholder="Longitude" type="number" step="any" value={loc.lng || ""} onChange={(e) => updateLocation(i, "lng", parseFloat(e.target.value) || 0)} />
+              <div className="flex gap-2">
+                <Input placeholder="Address" value={loc.address} onChange={(e) => updateLocation(i, "address", e.target.value)} />
+                <button
+                  type="button"
+                  onClick={() => geocodeLocation(i)}
+                  disabled={geocodingIdx === i || !isSpecificAddress(loc.address)}
+                  title={geocodeStatus[i] === "fail" ? "Geocoding failed — check console for details" : "Auto-fill coordinates from address"}
+                  className={`shrink-0 px-2.5 rounded-[var(--radius-md)] border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                    geocodeStatus[i] === "fail"
+                      ? "border-[var(--color-danger)] text-[var(--color-danger)]"
+                      : geocodeStatus[i] === "ok"
+                      ? "border-emerald-400 text-emerald-500"
+                      : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]"
+                  }`}
+                >
+                  {geocodeStatus[i] === "fail"
+                    ? <X size={14} />
+                    : geocodeStatus[i] === "ok"
+                    ? <Check size={14} />
+                    : <LocateFixed size={14} className={geocodingIdx === i ? "animate-spin" : ""} />}
+                </button>
+                {loc.address && (
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(loc.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open in Google Maps — right-click the pin to get exact coordinates"
+                    className="shrink-0 px-2.5 flex items-center rounded-[var(--radius-md)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-colors"
+                  >
+                    <Map size={14} />
+                  </a>
+                )}
               </div>
+              <Input
+                placeholder="Coordinates — paste from Google Maps, e.g. 34.2709, -119.1711"
+                value={loc.lat && loc.lng ? `${loc.lat}, ${loc.lng}` : ""}
+                onChange={(e) => {
+                  const [latStr, lngStr] = e.target.value.split(",");
+                  const lat = parseFloat(latStr);
+                  const lng = parseFloat(lngStr);
+                  if (!isNaN(lat)) updateLocation(i, "lat", lat);
+                  if (!isNaN(lng)) updateLocation(i, "lng", lng);
+                }}
+              />
               <Input placeholder="Notes (optional)" value={loc.notes ?? ""} onChange={(e) => updateLocation(i, "notes", e.target.value)} />
             </div>
           </div>

@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/Badge";
 import { slugify } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_CATEGORIES } from "@/lib/types";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, LocateFixed, Check } from "lucide-react";
 import type { City, ImportSinglePayload, Social } from "@/lib/types";
+import { geocodeAddress } from "@/lib/geocode";
 
 interface InlineImportPlaceFormProps {
   city: City;
@@ -42,9 +43,26 @@ export function InlineImportPlaceForm({ city, prefill, onSaved }: InlineImportPl
       notes: l.notes ?? "",
     })) ?? [{ address: "", lat: 0, lng: 0, notes: "" }]
   );
+  const [geocodingIdx, setGeocodingIdx] = useState<number | null>(null);
+  const [geocodeStatus, setGeocodeStatus] = useState<Record<number, "ok" | "fail">>({});
   const [recInput, setRecInput] = useState("");
   const [photoInput, setPhotoInput] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const geocodeLocation = async (i: number) => {
+    const addr = locations[i]?.address;
+    if (!addr) return;
+    setGeocodingIdx(i);
+    const coords = await geocodeAddress(addr);
+    setGeocodingIdx(null);
+    if (coords) {
+      updateLocation(i, "lat", coords.lat);
+      updateLocation(i, "lng", coords.lng);
+      setGeocodeStatus((s) => ({ ...s, [i]: "ok" }));
+    } else {
+      setGeocodeStatus((s) => ({ ...s, [i]: "fail" }));
+    }
+  };
 
   const handleNameChange = (name: string) => {
     setForm((f) => ({ ...f, name, slug: slugify(name) }));
@@ -252,9 +270,31 @@ export function InlineImportPlaceForm({ city, prefill, onSaved }: InlineImportPl
             </div>
             <div className="flex flex-col gap-2">
               <Input placeholder="Address" value={loc.address} onChange={(e) => updateLocation(i, "address", e.target.value)} />
-              <div className="grid grid-cols-2 gap-2">
-                <Input placeholder="Latitude" type="number" step="any" value={loc.lat || ""} onChange={(e) => updateLocation(i, "lat", parseFloat(e.target.value) || 0)} />
-                <Input placeholder="Longitude" type="number" step="any" value={loc.lng || ""} onChange={(e) => updateLocation(i, "lng", parseFloat(e.target.value) || 0)} />
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Coordinates — paste from Google Maps, e.g. 34.2709, -119.1711"
+                  value={loc.lat && loc.lng ? `${loc.lat}, ${loc.lng}` : ""}
+                  onChange={(e) => {
+                    const [latStr, lngStr] = e.target.value.split(",");
+                    const lat = parseFloat(latStr);
+                    const lng = parseFloat(lngStr);
+                    if (!isNaN(lat)) updateLocation(i, "lat", lat);
+                    if (!isNaN(lng)) updateLocation(i, "lng", lng);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => geocodeLocation(i)}
+                  disabled={geocodingIdx === i}
+                  title="Auto-fill coordinates from address"
+                  className="shrink-0 p-2 rounded-[var(--radius-md)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-colors disabled:opacity-50"
+                >
+                  {geocodingIdx === i
+                    ? <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin block" />
+                    : geocodeStatus[i] === "ok"
+                    ? <Check size={14} className="text-emerald-500" />
+                    : <LocateFixed size={14} />}
+                </button>
               </div>
               <Input placeholder="Notes (optional)" value={loc.notes} onChange={(e) => updateLocation(i, "notes", e.target.value)} />
             </div>
