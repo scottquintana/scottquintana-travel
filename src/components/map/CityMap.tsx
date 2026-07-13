@@ -149,7 +149,7 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
       {pins.map(({ place, location }) => {
         const isSelected = selectedPlaceId === place.id;
         const size = isSelected ? 20 : 14;
-        const HIT = 36;
+        const HIT = 44;
         return (
           <OverlayView
             key={location.id}
@@ -161,7 +161,7 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
               onClick={(e) => {
                 e.stopPropagation();
                 pinJustClickedRef.current = true;
-                requestAnimationFrame(() => { pinJustClickedRef.current = false; });
+                setTimeout(() => { pinJustClickedRef.current = false; }, 300);
                 onPinClick?.(place.id, location.id);
               }}
               title={place.name}
