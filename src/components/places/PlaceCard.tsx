@@ -1,4 +1,7 @@
-import { Check } from "lucide-react";
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import type { Place } from "@/lib/types";
 
 interface PlaceCardProps {
@@ -27,6 +30,22 @@ function categoryDotStyle(categories: string[]): React.CSSProperties {
 }
 
 export function PlaceCard({ place, locationNote, isSelected, distanceLabel, onHover, onClick }: PlaceCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [isClampable, setIsClampable] = useState(false);
+  const descRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+    // Measure with clamp applied — scrollHeight reflects full content height regardless of clamp
+    setIsClampable(el.scrollHeight > el.clientHeight + 1);
+  }, [place.description]);
+
+  const toggleExpanded = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpanded((v) => !v);
+  };
+
   return (
     <button
       type="button"
@@ -52,6 +71,16 @@ export function PlaceCard({ place, locationNote, isSelected, distanceLabel, onHo
             {place.vetted && (
               <Check size={13} className="text-emerald-500" />
             )}
+            {isClampable && (
+              <span
+                role="button"
+                tabIndex={-1}
+                onClick={toggleExpanded}
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors leading-none"
+              >
+                {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              </span>
+            )}
           </div>
         </div>
         {locationNote && (
@@ -60,9 +89,24 @@ export function PlaceCard({ place, locationNote, isSelected, distanceLabel, onHo
           </p>
         )}
         {place.description && (
-          <p className="mt-0.5 text-xs text-[var(--color-text-secondary)] leading-relaxed">
-            {place.description}
-          </p>
+          <>
+            <p
+              ref={descRef}
+              className={`mt-0.5 text-xs text-[var(--color-text-secondary)] leading-relaxed ${expanded ? "" : "line-clamp-2"}`}
+            >
+              {place.description}
+            </p>
+            {isClampable && (
+              <span
+                role="button"
+                tabIndex={-1}
+                onClick={toggleExpanded}
+                className="text-xs text-[var(--color-accent)] hover:underline mt-0.5 inline-block"
+              >
+                {expanded ? "Show less" : "Show more"}
+              </span>
+            )}
+          </>
         )}
       </div>
     </button>

@@ -29,9 +29,9 @@ function categoryDotStyle(categories: string[]): React.CSSProperties {
 }
 
 const CATEGORY_TEXT_COLOR: Record<string, string> = {
-  food: "text-[#e07040]",
-  drink: "text-[#7c4fc4]",
-  activity: "text-[#2d9e4a]",
+  food: "#e07040",
+  drink: "#7c4fc4",
+  activity: "#2d9e4a",
 };
 
 function AddressActions({ address }: { address: string }) {
@@ -125,7 +125,6 @@ function MobileDetailSheet({ place, citySlug, visible, onDismiss }: { place: Pla
 
   const firstLocation = place.locations?.[0];
   const dotStyle = categoryDotStyle(place.categories ?? []);
-  const textColor = CATEGORY_TEXT_COLOR[place.categories?.[0] ?? ""] ?? "text-[var(--color-text-muted)]";
 
   const translateY = isDragging && dragOffset > 0
     ? `translateY(${dragOffset}px)`
@@ -159,8 +158,15 @@ function MobileDetailSheet({ place, citySlug, visible, onDismiss }: { place: Pla
           <div className="w-2.5 h-2.5 rounded-full shrink-0" style={dotStyle} />
           <span className="font-semibold text-base text-[var(--color-text-primary)]">{place.name}</span>
           {place.vetted && <Check size={14} className="text-emerald-500 shrink-0" />}
-          <span className={cn("ml-auto text-xs font-medium capitalize", textColor)}>
-            {(place.categories ?? []).map(formatCategory).join(" · ")}
+          <span className="ml-auto flex items-center gap-1 text-xs font-medium">
+            {(place.categories ?? []).map((cat, i) => (
+              <span key={cat}>
+                {i > 0 && <span className="text-[var(--color-text-muted)] mx-0.5">·</span>}
+                <span style={{ color: CATEGORY_TEXT_COLOR[cat] ?? "var(--color-text-muted)" }} className="capitalize">
+                  {formatCategory(cat)}
+                </span>
+              </span>
+            ))}
           </span>
         </div>
 
@@ -254,14 +260,16 @@ export function MobileMapModal({
   resetToken, onResetView,
 }: MobileMapModalProps) {
   const [modalVisible, setModalVisible] = useState(false);
+  const [mapResizeToken, setMapResizeToken] = useState(0);
   // Keep the last place in state so the sheet can animate out before unmounting
   const [displayedPlace, setDisplayedPlace] = useState<Place | null>(focusedPlace);
   const [sheetVisible, setSheetVisible] = useState(!!focusedPlace);
 
-  // Modal slide-up on mount
+  // Modal slide-up on mount; trigger a map resize after animation so OverlayViews position correctly
   useEffect(() => {
     const id = requestAnimationFrame(() => setModalVisible(true));
-    return () => cancelAnimationFrame(id);
+    const resizeId = setTimeout(() => setMapResizeToken((t) => t + 1), 320);
+    return () => { cancelAnimationFrame(id); clearTimeout(resizeId); };
   }, []);
 
   // Animate sheet in/out as focusedPlace changes
@@ -312,23 +320,18 @@ export function MobileMapModal({
           onPinClick={onPinClick}
           onMapClick={focusedPlace ? onDismissPlace : undefined}
           resetToken={resetToken}
+          resizeToken={mapResizeToken}
         />
 
-        {/* Reset view button */}
-        <button
-          onClick={onResetView}
-          title="Reset map view"
-          className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)] text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors"
-        >
-          <Maximize2 size={12} />
-          Reset view
-        </button>
-
-        {/* Floating filter bar — fades out when a place is selected */}
+        {/* Floating filter bar + reset button row */}
         <div className={cn(
-          "absolute top-3 left-0 right-0 px-3 z-10 transition-opacity duration-200",
-          filtersHidden ? "opacity-0 pointer-events-none" : "opacity-100"
+          "absolute top-3 left-3 right-3 z-10 flex items-center gap-2",
+          filtersHidden ? "pointer-events-none" : ""
         )}>
+          <div className={cn(
+            "flex-1 min-w-0 transition-opacity duration-200",
+            filtersHidden ? "opacity-0" : "opacity-100"
+          )}>
           <div className="flex items-center gap-1.5 bg-[var(--color-surface)] rounded-[var(--radius-full)] shadow-[var(--shadow-md)] px-3 py-2 overflow-x-auto">
             {categories.map((cat) => {
               const active = activeCategories.has(cat);
@@ -359,6 +362,16 @@ export function MobileMapModal({
               <span className="text-xs text-[var(--color-text-muted)]">Vetted</span>
             </label>
           </div>
+          </div>
+
+          <button
+            onClick={onResetView}
+            title="Reset map view"
+            className="shrink-0 pointer-events-auto flex items-center gap-1 px-2.5 py-1.5 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)] text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors"
+          >
+            <Maximize2 size={12} />
+            Reset
+          </button>
         </div>
 
         {/* Tap hint — fades out when a place is selected */}

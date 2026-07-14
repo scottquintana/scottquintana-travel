@@ -20,6 +20,8 @@ interface CityMapProps {
   onMapClick?: () => void;
   /** Increment to trigger fitAll (zoom to show all pins) */
   resetToken?: number;
+  /** Increment after container resizes (e.g. modal slide-in) to re-sync OverlayView positions */
+  resizeToken?: number;
 }
 
 const mapContainerStyle = { width: "100%", height: "100%" };
@@ -68,7 +70,7 @@ function fitAll(map: google.maps.Map, pins: MapPin[]) {
   map.fitBounds(bounds, 48);
 }
 
-export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation, onPinClick, onMapClick, resetToken }: CityMapProps) {
+export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation, onPinClick, onMapClick, resetToken, resizeToken }: CityMapProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   // Refs so focus/pan effects always see fresh values without extra re-runs
@@ -117,6 +119,20 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
     if (!m || resetToken === undefined) return;
     fitAll(m, pinsRef.current);
   }, [resetToken]); // intentionally excludes map/pins — using refs
+
+  // Re-sync OverlayView positions after the map container finishes resizing/animating
+  useEffect(() => {
+    const m = mapRef.current;
+    if (!m || resizeToken === undefined) return;
+    google.maps.event.trigger(m, "resize");
+    const fid = focusedLocationIdRef.current;
+    if (fid) {
+      const pin = pinsRef.current.find((p) => p.location.id === fid);
+      if (pin) m.setCenter({ lat: pin.location.lat, lng: pin.location.lng });
+    } else {
+      fitAll(m, pinsRef.current);
+    }
+  }, [resizeToken]); // intentionally excludes map/pins — using refs
 
   // Pan to focused location; hide other pins during animation to avoid flash
   useEffect(() => {

@@ -47,6 +47,9 @@ function renderWithLinks(text: string) {
 
 export function CityPageClient({ city, places }: CityPageClientProps) {
   const isMobile = useIsMobile();
+
+  // Scroll to top on mount — browser may restore scroll position from the previous page
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
   const [panelPlace, setPanelPlace] = useState<Place | null>(null);
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
@@ -264,7 +267,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
               Clear
             </button>
           )}
-          <label className="ml-auto shrink-0 flex items-center gap-2 cursor-pointer select-none">
+          <label className="ml-auto shrink-0 flex items-center gap-2 cursor-pointer select-none py-1 px-1">
             <input
               type="checkbox"
               checked={!showUnvetted}
