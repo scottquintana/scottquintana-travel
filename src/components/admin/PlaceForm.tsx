@@ -78,6 +78,9 @@ export function PlaceForm({ cities, place }: PlaceFormProps) {
       if (data.address) {
         setLocations([{ address: data.address, lat: data.lat ?? 0, lng: data.lng ?? 0, notes: "" }]);
       }
+      if (data.photos?.length) {
+        setPhotos(data.photos);
+      }
       setImportedName(data.name);
       setImportQuery("");
     } catch {

@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
 
   const detailsUrl = new URL("https://maps.googleapis.com/maps/api/place/details/json");
   detailsUrl.searchParams.set("place_id", placeId);
-  detailsUrl.searchParams.set("fields", "name,formatted_address,geometry,website,types,editorial_summary");
+  detailsUrl.searchParams.set("fields", "name,formatted_address,geometry,website,types,editorial_summary,photos");
   detailsUrl.searchParams.set("key", apiKey);
 
   let detailsData;
@@ -163,6 +163,27 @@ export async function POST(req: NextRequest) {
 
   const r = detailsData.result;
 
+  // Resolve up to 3 photo references to their CDN URLs
+  const photoRefs: string[] = (r.photos ?? [])
+    .slice(0, 3)
+    .map((p: { photo_reference: string }) => p.photo_reference)
+    .filter(Boolean);
+
+  const photos = (
+    await Promise.all(
+      photoRefs.map(async (ref) => {
+        const photoApiUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photo_reference=${ref}&key=${apiKey}`;
+        try {
+          const res = await fetchWithTimeout(photoApiUrl, { redirect: "follow" }, 5000);
+          await res.body?.cancel();
+          return res.url !== photoApiUrl ? res.url : null;
+        } catch {
+          return null;
+        }
+      })
+    )
+  ).filter((u): u is string => Boolean(u));
+
   return NextResponse.json({
     name: r.name ?? "",
     address: r.formatted_address ?? "",
@@ -171,5 +192,6 @@ export async function POST(req: NextRequest) {
     website: r.website ?? "",
     categories: mapGoogleTypes(r.types ?? []),
     description: r.editorial_summary?.overview ?? "",
+    photos,
   });
 }
