@@ -89,7 +89,7 @@ export function ImportForm({ city }: ImportFormProps) {
     const supabase = createClient();
     const toSave = items
       .map((item, idx) => ({ item, idx }))
-      .filter(({ item }) => item._valid && item._state === "pending");
+      .filter(({ item }) => item._valid && (item._state === "pending" || item._state === "reviewing"));
 
     for (const { item, idx } of toSave) {
       const { data: place, error: placeErr } = await supabase
@@ -98,7 +98,7 @@ export function ImportForm({ city }: ImportFormProps) {
           city_id: city.id,
           name: item.name,
           slug: slugify(item.name ?? ""),
-          category: item.category ?? "food",
+          categories: item.categories ?? (item.category ? [item.category] : ["food"]),
           description: item.description ?? null,
           vetted: item.vetted ?? false,
           website: item.website ?? null,
@@ -142,7 +142,7 @@ export function ImportForm({ city }: ImportFormProps) {
     setSaveAllLoading(false);
   };
 
-  const pendingCount = items.filter((i) => i._state === "pending" && i._valid).length;
+  const pendingCount = items.filter((i) => (i._state === "pending" || i._state === "reviewing") && i._valid).length;
   const savedCount = items.filter((i) => i._state === "saved").length;
 
   return (

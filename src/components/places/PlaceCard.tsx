@@ -10,14 +10,23 @@ interface PlaceCardProps {
   onClick?: (place: Place) => void;
 }
 
-const CATEGORY_DOT: Record<string, string> = {
-  food: "bg-[#e07040]",
-  drink: "bg-[#7c4fc4]",
-  activity: "bg-[#2d9e4a]",
+const CATEGORY_HEX: Record<string, string> = {
+  food: "#e07040",
+  drink: "#7c4fc4",
+  activity: "#2d9e4a",
 };
 
+function categoryDotStyle(categories: string[]): React.CSSProperties {
+  const cats = (categories ?? []).filter(Boolean);
+  if (cats.length >= 2) {
+    const c1 = CATEGORY_HEX[cats[0]] ?? "#9ca3af";
+    const c2 = CATEGORY_HEX[cats[1]] ?? "#9ca3af";
+    return { background: `linear-gradient(135deg, ${c1} 50%, ${c2} 50%)` };
+  }
+  return { background: CATEGORY_HEX[cats[0]] ?? "#9ca3af" };
+}
+
 export function PlaceCard({ place, locationNote, isSelected, distanceLabel, onHover, onClick }: PlaceCardProps) {
-  const dotColor = CATEGORY_DOT[place.category] ?? "bg-gray-400";
   return (
     <button
       type="button"
@@ -30,7 +39,7 @@ export function PlaceCard({ place, locationNote, isSelected, distanceLabel, onHo
           : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent-muted)] hover:shadow-[var(--shadow-sm)]"
       }`}
     >
-      <div className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${dotColor}`} />
+      <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={categoryDotStyle(place.categories ?? [])} />
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <span className="text-sm font-medium text-[var(--color-text-primary)] leading-snug">

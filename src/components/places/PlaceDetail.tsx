@@ -69,7 +69,9 @@ export function PlaceDetail({ place, citySlug, onClose, isModal }: PlaceDetailPr
             <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">{place.name}</h1>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            <Badge variant="category">{formatCategory(place.category)}</Badge>
+            {(place.categories ?? []).map((c) => (
+              <Badge key={c} variant="category">{formatCategory(c)}</Badge>
+            ))}
             <Badge variant={place.vetted ? "vetted" : "unvetted"}>
               {place.vetted ? "Vetted ✓" : "Unvetted — haven't been yet"}
             </Badge>

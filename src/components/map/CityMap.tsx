@@ -43,9 +43,15 @@ const CATEGORY_COLORS: Record<string, string> = {
   activity: "#2d9e4a",
 };
 
-function pinFill(category: string, isSelected: boolean): string {
+function pinFill(categories: string[], isSelected: boolean): string {
   if (isSelected) return "#2d6a64";
-  return CATEGORY_COLORS[category] ?? "#6b7280";
+  const cats = categories.filter(Boolean);
+  if (cats.length >= 2) {
+    const c1 = CATEGORY_COLORS[cats[0]] ?? "#6b7280";
+    const c2 = CATEGORY_COLORS[cats[1]] ?? "#6b7280";
+    return `linear-gradient(135deg, ${c1} 50%, ${c2} 50%)`;
+  }
+  return CATEGORY_COLORS[cats[0]] ?? "#6b7280";
 }
 
 function fitAll(map: google.maps.Map, pins: MapPin[]) {
@@ -191,7 +197,7 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
                   width: size,
                   height: size,
                   borderRadius: "50%",
-                  background: pinFill(place.category, isSelected),
+                  background: pinFill(place.categories ?? [], isSelected),
                   border: "2.5px solid white",
                   boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
                 }}

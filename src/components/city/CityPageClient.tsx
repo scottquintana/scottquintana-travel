@@ -34,6 +34,17 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
+function renderWithLinks(text: string) {
+  const parts = text.split(/(\[[^\]]+\]\(https?:\/\/[^)]+\))/g);
+  return parts.map((part, i) => {
+    const match = part.match(/^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/);
+    if (match) {
+      return <a key={i} href={match[2]} target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] hover:underline">{match[1]}</a>;
+    }
+    return part;
+  });
+}
+
 export function CityPageClient({ city, places }: CityPageClientProps) {
   const isMobile = useIsMobile();
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
@@ -124,7 +135,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
   }, [closePanel]);
 
   const categories = useMemo(() => {
-    const cats = new Set(places.map((p) => p.category));
+    const cats = new Set(places.flatMap((p) => p.categories ?? []));
     return Array.from(cats).sort();
   }, [places]);
 
@@ -138,7 +149,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
 
   const filteredPlaces = useMemo(() => {
     return places.filter((p) => {
-      if (activeCategories.size > 0 && !activeCategories.has(p.category)) return false;
+      if (activeCategories.size > 0 && !(p.categories ?? []).some((c) => activeCategories.has(c))) return false;
       if (!showUnvetted && !p.vetted) return false;
       return true;
     });
@@ -213,7 +224,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
       {city.description && (
         <div className="shrink-0 bg-[var(--color-surface)] px-4 py-4 border-b border-[var(--color-border-subtle)]">
           <p className="max-w-7xl mx-auto text-sm text-[var(--color-text-secondary)] leading-relaxed">
-            {city.description}
+            {renderWithLinks(city.description)}
           </p>
         </div>
       )}

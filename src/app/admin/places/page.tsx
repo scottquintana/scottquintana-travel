@@ -46,7 +46,7 @@ export default function AdminPlacesPage() {
     const q = query.toLowerCase();
     return (
       p.name.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q) ||
+      (p.categories ?? []).join(" ").toLowerCase().includes(q) ||
       p.city?.name?.toLowerCase().includes(q)
     );
   });
@@ -192,7 +192,9 @@ export default function AdminPlacesPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <p className="font-medium text-sm text-[var(--color-text-primary)]">{place.name}</p>
-                <Badge variant="category">{formatCategory(place.category)}</Badge>
+                {(place.categories ?? []).map((c) => (
+                  <Badge key={c} variant="category">{formatCategory(c)}</Badge>
+                ))}
                 <Badge variant={place.vetted ? "vetted" : "unvetted"}>{place.vetted ? "Vetted" : "Unvetted"}</Badge>
               </div>
               <p className="text-xs text-[var(--color-text-muted)]">{place.city?.name}</p>

@@ -13,7 +13,7 @@ export type Place = {
   city_id: string;
   name: string;
   slug: string;
-  category: string;
+  categories: string[];
   description: string;
   vetted: boolean;
   website: string | null;
@@ -43,7 +43,9 @@ export type Social = {
 export type ImportSinglePayload = {
   city_slug?: string;
   name: string;
-  category: string;
+  /** Array of categories. Also accepts legacy single `category` string — normalized on import. */
+  categories?: string[];
+  category?: string;
   description?: string;
   vetted?: boolean;
   website?: string;

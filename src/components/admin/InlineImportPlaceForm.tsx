@@ -27,7 +27,7 @@ export function InlineImportPlaceForm({ city, prefill, onSaved }: InlineImportPl
   const [form, setForm] = useState({
     name: prefill.name ?? "",
     slug: slugify(prefill.name ?? ""),
-    category: prefill.category ?? "food",
+    categories: prefill.categories ?? (prefill.category ? [prefill.category] : ["food"]),
     description: prefill.description ?? "",
     vetted: prefill.vetted ?? false,
     website: prefill.website ?? "",
@@ -125,7 +125,7 @@ export function InlineImportPlaceForm({ city, prefill, onSaved }: InlineImportPl
         city_id: city.id,
         name: form.name,
         slug: form.slug,
-        category: form.category,
+        categories: form.categories,
         description: form.description,
         vetted: form.vetted,
         website: form.website || null,
@@ -165,17 +165,20 @@ export function InlineImportPlaceForm({ city, prefill, onSaved }: InlineImportPl
         </div>
       </div>
 
-      {/* Category */}
+      {/* Categories */}
       <div>
-        <Label>Category</Label>
+        <Label>Categories</Label>
         <div className="flex flex-wrap gap-2 mt-1">
           {DEFAULT_CATEGORIES.map((cat) => (
             <button
               key={cat}
               type="button"
-              onClick={() => setForm((f) => ({ ...f, category: cat }))}
+              onClick={() => setForm((f) => {
+                const has = f.categories.includes(cat);
+                return { ...f, categories: has ? f.categories.filter((c) => c !== cat) : [...f.categories, cat] };
+              })}
               className={`px-3 py-1 text-sm rounded-[var(--radius-full)] border transition-colors capitalize ${
-                form.category === cat
+                form.categories.includes(cat)
                   ? "bg-[var(--color-accent)] text-white border-[var(--color-accent)]"
                   : "border-[var(--color-border)] text-[var(--color-text-secondary)]"
               }`}
@@ -183,12 +186,6 @@ export function InlineImportPlaceForm({ city, prefill, onSaved }: InlineImportPl
               {cat}
             </button>
           ))}
-          <Input
-            placeholder="custom"
-            className="w-28 text-xs"
-            value={DEFAULT_CATEGORIES.includes(form.category as typeof DEFAULT_CATEGORIES[number]) ? "" : form.category}
-            onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-          />
         </div>
       </div>
 

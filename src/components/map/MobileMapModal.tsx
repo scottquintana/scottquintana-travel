@@ -18,11 +18,15 @@ const CATEGORY_COLORS: Record<string, string> = {
   activity: "#2d9e4a",
 };
 
-const CATEGORY_DOT: Record<string, string> = {
-  food: "bg-[#e07040]",
-  drink: "bg-[#7c4fc4]",
-  activity: "bg-[#2d9e4a]",
-};
+function categoryDotStyle(categories: string[]): React.CSSProperties {
+  const cats = (categories ?? []).filter(Boolean);
+  if (cats.length >= 2) {
+    const c1 = CATEGORY_COLORS[cats[0]] ?? "#9ca3af";
+    const c2 = CATEGORY_COLORS[cats[1]] ?? "#9ca3af";
+    return { background: `linear-gradient(135deg, ${c1} 50%, ${c2} 50%)` };
+  }
+  return { background: CATEGORY_COLORS[cats[0]] ?? "#9ca3af" };
+}
 
 const CATEGORY_TEXT_COLOR: Record<string, string> = {
   food: "text-[#e07040]",
@@ -120,8 +124,8 @@ function MobileDetailSheet({ place, citySlug, visible, onDismiss }: { place: Pla
   };
 
   const firstLocation = place.locations?.[0];
-  const dotColor = CATEGORY_DOT[place.category] ?? "bg-gray-400";
-  const textColor = CATEGORY_TEXT_COLOR[place.category] ?? "text-[var(--color-text-muted)]";
+  const dotStyle = categoryDotStyle(place.categories ?? []);
+  const textColor = CATEGORY_TEXT_COLOR[place.categories?.[0] ?? ""] ?? "text-[var(--color-text-muted)]";
 
   const translateY = isDragging && dragOffset > 0
     ? `translateY(${dragOffset}px)`
@@ -152,11 +156,11 @@ function MobileDetailSheet({ place, citySlug, visible, onDismiss }: { place: Pla
       <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-10">
         {/* Identity */}
         <div className="flex items-center gap-2 mb-3">
-          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${dotColor}`} />
+          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={dotStyle} />
           <span className="font-semibold text-base text-[var(--color-text-primary)]">{place.name}</span>
           {place.vetted && <Check size={14} className="text-emerald-500 shrink-0" />}
           <span className={cn("ml-auto text-xs font-medium capitalize", textColor)}>
-            {formatCategory(place.category)}
+            {(place.categories ?? []).map(formatCategory).join(" · ")}
           </span>
         </div>
 

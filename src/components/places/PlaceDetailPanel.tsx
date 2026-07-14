@@ -14,11 +14,21 @@ interface PlaceDetailPanelProps {
   onClose: () => void;
 }
 
-const CATEGORY_DOT: Record<string, string> = {
-  food: "bg-[#e07040]",
-  drink: "bg-[#7c4fc4]",
-  activity: "bg-[#2d9e4a]",
+const CATEGORY_HEX: Record<string, string> = {
+  food: "#e07040",
+  drink: "#7c4fc4",
+  activity: "#2d9e4a",
 };
+
+function categoryDotStyle(categories: string[]): React.CSSProperties {
+  const cats = (categories ?? []).filter(Boolean);
+  if (cats.length >= 2) {
+    const c1 = CATEGORY_HEX[cats[0]] ?? "#9ca3af";
+    const c2 = CATEGORY_HEX[cats[1]] ?? "#9ca3af";
+    return { background: `linear-gradient(135deg, ${c1} 50%, ${c2} 50%)` };
+  }
+  return { background: CATEGORY_HEX[cats[0]] ?? "#9ca3af" };
+}
 
 function AddressActions({ address }: { address: string }) {
   const [copied, setCopied] = useState(false);
@@ -62,7 +72,7 @@ function AddressActions({ address }: { address: string }) {
 }
 
 export function PlaceDetailPanel({ place, citySlug, onClose }: PlaceDetailPanelProps) {
-  const dotColor = CATEGORY_DOT[place.category] ?? "bg-gray-400";
+  const dotStyle = categoryDotStyle(place.categories ?? []);
   const firstLocation = place.locations?.[0];
   const photo = place.photos?.[0];
 
@@ -97,13 +107,17 @@ export function PlaceDetailPanel({ place, citySlug, onClose }: PlaceDetailPanelP
 
         {/* Identity */}
         <div className="flex items-center gap-2.5 px-4 pt-3 pb-1 md:p-0 md:shrink-0">
-          <div className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`} />
+          <div className="w-2 h-2 rounded-full shrink-0" style={dotStyle} />
           <div>
             <div className="flex items-center gap-1.5">
               <p className="font-semibold text-sm text-[var(--color-text-primary)] leading-snug whitespace-nowrap">{place.name}</p>
               {place.vetted && <Check size={12} className="text-emerald-500 shrink-0" />}
             </div>
-            <Badge variant="category" className="mt-0.5">{formatCategory(place.category)}</Badge>
+            <div className="flex flex-wrap gap-1 mt-0.5">
+              {(place.categories ?? []).map((c) => (
+                <Badge key={c} variant="category">{formatCategory(c)}</Badge>
+              ))}
+            </div>
           </div>
         </div>
 
