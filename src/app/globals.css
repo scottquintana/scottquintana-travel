@@ -2,20 +2,20 @@
 
 @theme {
   /* Colors */
-  --color-background: #faf9f7;
-  --color-surface: #ffffff;
-  --color-surface-alt: #f3f1ee;
-  --color-border: #e5e2dd;
-  --color-border-subtle: #ede9e4;
+  --color-background: #f0efed;
+  --color-surface: #fafaf8;
+  --color-surface-alt: #d6cfb5;
+  --color-border: #c4bca8;
+  --color-border-subtle: #ddd8cc;
 
-  --color-text-primary: #1c1917;
-  --color-text-secondary: #57534e;
-  --color-text-muted: #a8a29e;
+  --color-text-primary: #2e2e2e;
+  --color-text-secondary: #584e40;
+  --color-text-muted: #a27e69;
 
-  --color-accent: #2d6a64;
-  --color-accent-hover: #235550;
-  --color-accent-light: #e8f3f2;
-  --color-accent-muted: #4a9e96;
+  --color-accent: #7091a8;
+  --color-accent-hover: #587890;
+  --color-accent-light: #dde6ee;
+  --color-accent-muted: #8aa4b8;
 
   --color-danger: #dc2626;
   --color-danger-light: #fef2f2;
@@ -53,20 +53,20 @@ input, textarea, select, button {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background: #111110;
-    --color-surface: #1c1b1a;
-    --color-surface-alt: #252422;
-    --color-border: #333230;
-    --color-border-subtle: #2a2927;
+    --color-background: #1c1c1c;
+    --color-surface: #2e2e2e;
+    --color-surface-alt: #3a3a3a;
+    --color-border: #4a4a4a;
+    --color-border-subtle: #404040;
 
-    --color-text-primary: #f5f4f2;
-    --color-text-secondary: #a8a29e;
-    --color-text-muted: #6b6560;
+    --color-text-primary: #f0efed;
+    --color-text-secondary: #d6cfb5;
+    --color-text-muted: #a27e69;
 
-    --color-accent: #4aa39c;
-    --color-accent-hover: #57b3ac;
-    --color-accent-light: #1a2f2e;
-    --color-accent-muted: #4a9e96;
+    --color-accent: #7091a8;
+    --color-accent-hover: #8aaabe;
+    --color-accent-light: #182028;
+    --color-accent-muted: #c19066;
 
     --color-danger: #ef4444;
     --color-danger-light: #2d1212;

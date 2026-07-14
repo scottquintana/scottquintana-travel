@@ -36,7 +36,7 @@ export function PlaceCard({ place, locationNote, isSelected, distanceLabel, onHo
       className={`w-full text-left flex items-start gap-3 px-3 py-3 rounded-[var(--radius-md)] border transition-all duration-150 ${
         isSelected
           ? "border-[var(--color-accent)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)]"
-          : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent-muted)] hover:shadow-[var(--shadow-sm)]"
+          : "border-transparent bg-[var(--color-surface)] hover:border-[var(--color-accent-muted)] hover:shadow-[var(--shadow-sm)]"
       }`}
     >
       <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={categoryDotStyle(place.categories ?? [])} />

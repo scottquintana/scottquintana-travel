@@ -279,9 +279,13 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
                 className={cn(
                   "shrink-0 flex items-center gap-1.5 text-xs px-3 py-1 rounded-[var(--radius-full)] border transition-colors capitalize",
                   active
-                    ? "bg-[var(--color-surface-alt)] text-[var(--color-text-primary)] border-[var(--color-border)] font-medium shadow-[var(--shadow-sm)]"
+                    ? "text-[var(--color-text-primary)] font-medium shadow-[var(--shadow-sm)]"
                     : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent-muted)]"
                 )}
+                style={active ? {
+                  backgroundColor: `${dotColor}18`,
+                  borderColor: `${dotColor}60`,
+                } : {}}
               >
                 <span
                   className="w-2 h-2 rounded-full shrink-0"
@@ -359,7 +363,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
 
           {/* Location input panel */}
           {showLocationInput && (
-            <div className="mb-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-3">
+            <div className="mb-3 rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-3">
               {/* Clear location capsule — only when a location is already set */}
               {userLocation && (
                 <div className="flex justify-end mb-2">

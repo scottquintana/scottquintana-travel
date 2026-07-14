@@ -48,20 +48,20 @@ function AddressActions({ address }: { address: string }) {
   return (
     <div className="flex flex-col gap-1.5 min-w-0">
       <div className="flex items-start gap-1.5">
-        <MapPin size={11} className="text-[var(--color-text-muted)] shrink-0 mt-0.5" />
-        <span className="text-xs text-[var(--color-text-muted)] leading-snug">{address}</span>
+        <MapPin size={11} className="text-[var(--color-accent-hover)] shrink-0 mt-0.5" />
+        <span className="text-xs text-[var(--color-accent-hover)] leading-snug">{address}</span>
       </div>
       <div className="flex items-center gap-2">
         <button
           onClick={copy}
-          className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] px-2 py-1 rounded transition-colors"
+          className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] border border-[var(--color-border)] px-2 py-1 rounded transition-colors"
         >
           {copied ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
           {copied ? "Copied" : "Copy address"}
         </button>
         <button
           onClick={openMaps}
-          className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] px-2 py-1 rounded transition-colors"
+          className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] border border-[var(--color-border)] px-2 py-1 rounded transition-colors"
         >
           <Map size={11} />
           Open in Maps
@@ -114,9 +114,18 @@ export function PlaceDetailPanel({ place, citySlug, onClose }: PlaceDetailPanelP
               {place.vetted && <Check size={12} className="text-emerald-500 shrink-0" />}
             </div>
             <div className="flex flex-wrap gap-1 mt-0.5">
-              {(place.categories ?? []).map((c) => (
-                <Badge key={c} variant="category">{formatCategory(c)}</Badge>
-              ))}
+              {(place.categories ?? []).map((c) => {
+                const hex = CATEGORY_HEX[c] ?? "#9ca3af";
+                return (
+                  <span
+                    key={c}
+                    className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-[var(--radius-full)] capitalize"
+                    style={{ backgroundColor: `${hex}18`, color: hex, border: `1px solid ${hex}60` }}
+                  >
+                    {formatCategory(c)}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -151,14 +160,14 @@ export function PlaceDetailPanel({ place, citySlug, onClose }: PlaceDetailPanelP
         )}
 
         {/* Address + website */}
-        <div className="flex flex-col gap-2 px-4 py-2 md:p-0 md:shrink-0">
+        <div className="flex flex-col gap-2 px-4 py-2 md:p-0 min-w-0">
           {firstLocation && <AddressActions address={firstLocation.address} />}
           {place.website && (
             <a
               href={place.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-[var(--color-accent)] hover:underline"
+              className="flex items-center gap-1 text-xs text-[var(--color-accent)] hover:underline min-w-0"
             >
               <ExternalLink size={11} className="shrink-0" />
               <span className="truncate">{place.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</span>
@@ -169,7 +178,7 @@ export function PlaceDetailPanel({ place, citySlug, onClose }: PlaceDetailPanelP
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 md:static md:ml-auto md:shrink-0 p-1.5 rounded-[var(--radius-md)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] transition-colors"
+          className="absolute top-3 right-3 md:static md:ml-auto md:shrink-0 p-1.5 rounded-[var(--radius-md)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] transition-colors"
           aria-label="Close"
         >
           <X size={15} />

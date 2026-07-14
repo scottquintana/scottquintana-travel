@@ -103,7 +103,7 @@ export function PlaceDetail({ place, citySlug, onClose, isModal }: PlaceDetailPr
             </h2>
             <div className="flex flex-col gap-3">
               {place.locations.map((loc) => (
-                <div key={loc.id} className="rounded-[var(--radius-md)] bg-[var(--color-surface-alt)] p-3">
+                <div key={loc.id} className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3">
                   <div className="flex items-start gap-2 mb-2">
                     <MapPin size={14} className="text-[var(--color-accent)] mt-0.5 shrink-0" />
                     <p className="text-sm text-[var(--color-text-primary)]">{loc.address}</p>

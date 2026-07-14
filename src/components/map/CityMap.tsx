@@ -22,6 +22,10 @@ interface CityMapProps {
   resetToken?: number;
   /** Increment after container resizes (e.g. modal slide-in) to re-sync OverlayView positions */
   resizeToken?: number;
+  /** Color for the selected/highlighted pin (defaults to current accent) */
+  selectedPinColor?: string;
+  /** Apply a dark tile style */
+  darkMap?: boolean;
 }
 
 const mapContainerStyle = { width: "100%", height: "100%" };
@@ -29,16 +33,35 @@ const mapContainerStyle = { width: "100%", height: "100%" };
 // and calls map.setCenter() on every render if it's a new object literal.
 const INITIAL_CENTER = { lat: 34.0195, lng: -118.4912 };
 
-const mapOptions = {
+const LIGHT_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
+];
+
+const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#212121" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#212121" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#bdbdbd" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#1c1c1c" }] },
+  { featureType: "road", elementType: "geometry.fill", stylers: [{ color: "#2c2c2c" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8a8a8a" }] },
+  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#373737" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#484848" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#212121" }] },
+  { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
+];
+
+const BASE_MAP_OPTIONS = {
   disableDefaultUI: false,
   zoomControl: true,
   streetViewControl: false,
   mapTypeControl: false,
   fullscreenControl: false,
-  styles: [
-    { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-    { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
-  ],
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -47,8 +70,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   activity: "#2d9e4a",
 };
 
-function pinFill(categories: string[], isSelected: boolean): string {
-  if (isSelected) return "#2d6a64";
+function pinFill(categories: string[], isSelected: boolean, selectedColor = "#2d6a64"): string {
+  if (isSelected) return selectedColor;
   const cats = categories.filter(Boolean);
   if (cats.length >= 2) {
     const c1 = CATEGORY_COLORS[cats[0]] ?? "#6b7280";
@@ -70,8 +93,24 @@ function fitAll(map: google.maps.Map, pins: MapPin[]) {
   map.fitBounds(bounds, 48);
 }
 
-export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation, onPinClick, onMapClick, resetToken, resizeToken }: CityMapProps) {
+export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation, onPinClick, onMapClick, resetToken, resizeToken, selectedPinColor, darkMap }: CityMapProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [cssAccentColor, setCssAccentColor] = useState("#7091a8");
+  const [systemDark, setSystemDark] = useState(false);
+
+  useEffect(() => {
+    const val = getComputedStyle(document.documentElement).getPropertyValue("--color-accent").trim();
+    if (val) setCssAccentColor(val);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    setSystemDark(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   const [isPanning, setIsPanning] = useState(false);
   // Refs so focus/pan effects always see fresh values without extra re-runs
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -82,6 +121,9 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
   // Prevents map onClick from firing when a pin was just tapped
   const pinJustClickedRef = useRef(false);
   const idleListenerRef = useRef<google.maps.MapsEventListener | null>(null);
+
+  const isDark = darkMap ?? systemDark;
+  const mapOptions = { ...BASE_MAP_OPTIONS, styles: isDark ? DARK_MAP_STYLES : LIGHT_MAP_STYLES };
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
@@ -173,6 +215,7 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
 
   return (
     <GoogleMap
+      key={isDark ? "dark" : "light"}
       mapContainerStyle={mapContainerStyle}
       center={INITIAL_CENTER}
       zoom={10}
@@ -222,7 +265,7 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
                   width: size,
                   height: size,
                   borderRadius: "50%",
-                  background: pinFill(place.categories ?? [], isSelected),
+                  background: pinFill(place.categories ?? [], isSelected, selectedPinColor ?? cssAccentColor),
                   border: "2.5px solid white",
                   boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
                 }}
