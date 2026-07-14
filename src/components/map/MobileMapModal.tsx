@@ -299,12 +299,11 @@ export function MobileMapModal({
       )}
     >
       {/* Top bar */}
-      <div className="shrink-0 flex items-center px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-        <span className="font-semibold text-[var(--color-text-primary)]">{city.name}</span>
+      <div className="shrink-0 flex items-center justify-end px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
         <button
           onClick={handleClose}
-          className="ml-auto p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
           aria-label="Close map"
+          className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
         >
           <X size={20} />
         </button>

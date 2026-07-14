@@ -1,6 +1,10 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+// Frosted-glass overlay buttons — for use over cover photos
+export const OVERLAY_CAPSULE = "inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border border-white/25 bg-black/25 text-white backdrop-blur-sm hover:bg-black/40 transition-colors shrink-0";
+export const OVERLAY_CIRCLE = "inline-flex items-center justify-center w-8 h-8 rounded-full border border-white/25 bg-black/25 text-white backdrop-blur-sm hover:bg-black/40 transition-colors shrink-0";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
