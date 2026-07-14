@@ -13,10 +13,10 @@ export default async function EditCityPage({ params }: { params: Promise<{ id: s
   const { data: city } = await supabase.from("cities").select("*").eq("id", id).single();
   if (!city) notFound();
   return (
-    <div className="p-8 max-w-xl">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 md:p-8 max-w-xl">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Edit city</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <DeleteAllPlacesButton cityId={id} cityName={city.name} />
           <ExportButton cityId={id} cityName={city.name} />
           <Link href={`/admin/cities/${id}/import`}>

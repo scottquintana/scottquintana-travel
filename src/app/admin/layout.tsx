@@ -15,7 +15,7 @@ function NavLink({ href, icon, children }: { href: string; icon: React.ReactNode
   );
 }
 
-function LogoutButton() {
+function LogoutButton({ iconOnly }: { iconOnly?: boolean }) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -27,34 +27,40 @@ function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--color-text-muted)] rounded-[var(--radius-md)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-danger)] transition-colors"
+      className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text-muted)] rounded-[var(--radius-md)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-danger)] transition-colors"
     >
-      <LogOut size={14} /> Sign out
+      <LogOut size={14} />
+      {!iconOnly && "Sign out"}
     </button>
-  );
-}
-
-function AdminNav() {
-  return (
-    <nav className="shrink-0 w-48 bg-[var(--color-surface)] border-r border-[var(--color-border)] flex flex-col">
-      <div className="px-4 py-5 border-b border-[var(--color-border)]">
-        <span className="text-sm font-semibold text-[var(--color-text-primary)]">Admin</span>
-      </div>
-      <div className="flex-1 p-3 flex flex-col gap-1">
-        <NavLink href="/admin/cities" icon={<Building2 size={14} />}>Cities</NavLink>
-        <NavLink href="/admin/places" icon={<MapPin size={14} />}>Places</NavLink>
-      </div>
-      <div className="p-3 border-t border-[var(--color-border)]">
-        <LogoutButton />
-      </div>
-    </nav>
   );
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen bg-[var(--color-background)]">
-      <AdminNav />
+    <div className="flex flex-col md:flex-row h-dvh bg-[var(--color-background)]">
+
+      {/* Mobile top bar */}
+      <nav className="md:hidden shrink-0 flex items-center gap-1 px-3 py-2 bg-[var(--color-surface)] border-b border-[var(--color-border)]">
+        <span className="text-sm font-semibold text-[var(--color-text-primary)] mr-auto px-1">Admin</span>
+        <NavLink href="/admin/cities" icon={<Building2 size={14} />}>Cities</NavLink>
+        <NavLink href="/admin/places" icon={<MapPin size={14} />}>Places</NavLink>
+        <LogoutButton iconOnly />
+      </nav>
+
+      {/* Desktop sidebar */}
+      <nav className="hidden md:flex shrink-0 w-48 bg-[var(--color-surface)] border-r border-[var(--color-border)] flex-col">
+        <div className="px-4 py-5 border-b border-[var(--color-border)]">
+          <span className="text-sm font-semibold text-[var(--color-text-primary)]">Admin</span>
+        </div>
+        <div className="flex-1 p-3 flex flex-col gap-1">
+          <NavLink href="/admin/cities" icon={<Building2 size={14} />}>Cities</NavLink>
+          <NavLink href="/admin/places" icon={<MapPin size={14} />}>Places</NavLink>
+        </div>
+        <div className="p-3 border-t border-[var(--color-border)]">
+          <LogoutButton />
+        </div>
+      </nav>
+
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>
   );

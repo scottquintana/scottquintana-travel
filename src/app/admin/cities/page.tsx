@@ -22,7 +22,7 @@ export default function AdminCitiesPage() {
   );
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-4 md:p-8 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Cities</h1>
         <Link href="/admin/cities/new"><Button size="sm"><Plus size={14} /> New city</Button></Link>

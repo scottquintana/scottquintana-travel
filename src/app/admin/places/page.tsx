@@ -108,8 +108,8 @@ export default function AdminPlacesPage() {
   };
 
   return (
-    <div className="p-8 max-w-4xl">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 md:p-8 max-w-4xl">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Places</h1>
         <div className="flex items-center gap-2">
           {selected.size > 0 ? (
@@ -190,14 +190,14 @@ export default function AdminPlacesPage() {
               className="w-4 h-4 rounded accent-[var(--color-accent)] cursor-pointer shrink-0"
             />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <p className="font-medium text-sm text-[var(--color-text-primary)]">{place.name}</p>
+              <p className="font-medium text-sm text-[var(--color-text-primary)]">{place.name}</p>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                <span className="text-xs text-[var(--color-text-muted)]">{place.city?.name}</span>
                 {(place.categories ?? []).map((c) => (
                   <Badge key={c} variant="category">{formatCategory(c)}</Badge>
                 ))}
                 <Badge variant={place.vetted ? "vetted" : "unvetted"}>{place.vetted ? "Vetted" : "Unvetted"}</Badge>
               </div>
-              <p className="text-xs text-[var(--color-text-muted)]">{place.city?.name}</p>
             </div>
             <Link href={`/admin/places/${place.id}`}>
               <Button variant="ghost" size="sm"><Pencil size={13} /> Edit</Button>

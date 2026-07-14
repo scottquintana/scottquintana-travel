@@ -247,8 +247,8 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
             <Link
               href="/"
               className={city.cover_photo
-                ? "shrink-0 inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border border-[var(--color-accent)]/50 bg-[var(--color-accent)]/35 text-white backdrop-blur-sm hover:bg-[var(--color-accent)]/55 transition-colors"
-                : "shrink-0 inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] transition-colors"
+                ? "shrink-0 inline-flex items-center gap-1 text-xs font-medium text-white/90 hover:text-white transition-colors [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]"
+                : "shrink-0 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
               }
             >
               ← All cities
@@ -382,7 +382,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
                   value={locationInput}
                   onChange={(e) => { setLocationInput(e.target.value); setLocationInputStatus("idle"); }}
                   placeholder="City, neighborhood, or address…"
-                  className="w-full text-sm px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background)] outline-none focus:border-[var(--color-accent)] transition-colors placeholder:text-[var(--color-text-muted)]"
+                  className="w-full text-base px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-background)] outline-none focus:border-[var(--color-accent)] transition-colors placeholder:text-[var(--color-text-muted)]"
                 />
                 {locationInputStatus === "error" && (
                   <p className="text-xs text-[var(--color-danger)]">Couldn't find that location — try being more specific.</p>

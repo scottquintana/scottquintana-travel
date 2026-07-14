@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { slugify } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_CATEGORIES } from "@/lib/types";
-import { Plus, Trash2, X, LocateFixed, Map, Check } from "lucide-react";
+import { Plus, Trash2, X, LocateFixed, Map, Check, MapPin, Loader2 } from "lucide-react";
 import type { City, Place, PlaceLocation, Social } from "@/lib/types";
 import { geocodeAddress, isSpecificAddress } from "@/lib/geocode";
 
@@ -45,6 +45,47 @@ export function PlaceForm({ cities, place }: PlaceFormProps) {
   const [recInput, setRecInput] = useState("");
   const [photoInput, setPhotoInput] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const [importQuery, setImportQuery] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [importedName, setImportedName] = useState("");
+
+  const handleGoogleImport = async () => {
+    if (!importQuery.trim()) return;
+    setImporting(true);
+    setImportError("");
+    setImportedName("");
+    try {
+      const res = await fetch("/api/admin/places/google-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: importQuery }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setImportError(data.error ?? "Import failed");
+        return;
+      }
+      setForm((f) => ({
+        ...f,
+        name: data.name || f.name,
+        slug: place ? f.slug : slugify(data.name || f.name),
+        website: data.website || f.website,
+        categories: data.categories?.length ? data.categories : f.categories,
+        description: data.description || f.description,
+      }));
+      if (data.address) {
+        setLocations([{ address: data.address, lat: data.lat ?? 0, lng: data.lng ?? 0, notes: "" }]);
+      }
+      setImportedName(data.name);
+      setImportQuery("");
+    } catch {
+      setImportError("Network error — could not reach the server");
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const handleNameChange = (name: string) => {
     setForm((f) => ({ ...f, name, slug: place ? f.slug : slugify(name) }));
@@ -184,6 +225,42 @@ export function PlaceForm({ cities, place }: PlaceFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      {/* Google Maps import */}
+      <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <p className="text-xs font-medium text-[var(--color-text-secondary)] mb-3 flex items-center gap-1.5">
+          <MapPin size={12} className="text-[var(--color-accent)]" />
+          Import from Google Maps
+        </p>
+        {importedName && (
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-2">
+            Imported: <span className="font-medium">{importedName}</span>
+          </p>
+        )}
+        <div className="flex gap-2">
+          <Input
+            placeholder='Search by place name, e.g. "Canard Portland"'
+            value={importQuery}
+            onChange={(e) => { setImportQuery(e.target.value); setImportError(""); setImportedName(""); }}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleGoogleImport(); } }}
+            className="text-base"
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={importing || !importQuery.trim()}
+            onClick={handleGoogleImport}
+            className="shrink-0"
+          >
+            {importing ? <Loader2 size={13} className="animate-spin" /> : "Import"}
+          </Button>
+        </div>
+        {importError
+          ? <p className="text-xs text-[var(--color-danger)] mt-2">{importError}</p>
+          : <p className="text-xs text-[var(--color-text-muted)] mt-2">Search by name or paste a full Google Maps URL. Google share links (share.google/…) are not supported.</p>
+        }
+      </div>
+
       {/* City */}
       <div>
         <Label htmlFor="city">City</Label>
