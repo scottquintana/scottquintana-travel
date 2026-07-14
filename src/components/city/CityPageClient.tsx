@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { PlaceCard } from "@/components/places/PlaceCard";
 import { CityMap } from "@/components/map/CityMap";
 import { PlaceDetailPanel } from "@/components/places/PlaceDetailPanel";
 import { MobileMapModal } from "@/components/map/MobileMapModal";
 import { formatCategory, haversineDistanceMi, formatDistanceMi } from "@/lib/utils";
-import { Map, LocateFixed, Loader2, X, ArrowRight, Maximize2 } from "lucide-react";
+import { Map, LocateFixed, Loader2, X, ArrowRight, Maximize2, ChevronDown, ChevronUp } from "lucide-react";
 import { geocodeAddress } from "@/lib/geocode";
 import type { City, Place } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,53 @@ function renderWithLinks(text: string) {
     }
     return part;
   });
+}
+
+function CityDescription({ description }: { description: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [isClampable, setIsClampable] = useState(false);
+  const ref = useRef<HTMLParagraphElement>(null);
+  const expandedRef = useRef(expanded);
+  expandedRef.current = expanded;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => {
+      if (expandedRef.current) {
+        // No clamp applied — compare full content height against what 2 lines would be
+        const lh = parseFloat(getComputedStyle(el).lineHeight) || 20;
+        setIsClampable(el.scrollHeight > lh * 2 + 1);
+      } else {
+        setIsClampable(el.scrollHeight > el.clientHeight + 1);
+      }
+    };
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [description]);
+
+  return (
+    <div className="shrink-0 bg-[var(--color-surface)] px-4 py-3 border-b border-[var(--color-border-subtle)]">
+      <div className="max-w-7xl mx-auto">
+        <p
+          ref={ref}
+          className={`text-sm text-[var(--color-text-secondary)] leading-relaxed ${expanded ? "" : "line-clamp-2"}`}
+        >
+          {renderWithLinks(description)}
+        </p>
+        {isClampable && (
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-1 flex items-center gap-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+          >
+            {expanded ? <><ChevronUp size={12} /> Show less</> : <><ChevronDown size={12} /> Show more</>}
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function CityPageClient({ city, places }: CityPageClientProps) {
@@ -108,6 +155,12 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
     setSortBy(userLocation ? "distance" : "az");
     if (userLocation) setShowLocationInput(false);
   }, [userLocation]);
+
+  const locationInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showLocationInput) locationInputRef.current?.focus();
+  }, [showLocationInput]);
 
   useEffect(() => {
     if (!showLocationInput) return;
@@ -227,11 +280,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
 
       {/* City description */}
       {city.description && (
-        <div className="shrink-0 bg-[var(--color-surface)] px-4 py-4 border-b border-[var(--color-border-subtle)]">
-          <p className="max-w-7xl mx-auto text-sm text-[var(--color-text-secondary)] leading-relaxed">
-            {renderWithLinks(city.description)}
-          </p>
-        </div>
+        <CityDescription description={city.description} />
       )}
 
       {/* Filter bar */}
@@ -282,7 +331,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden w-full">
         {/* List panel — full width on mobile, fixed narrow on desktop */}
-        <div className="relative w-full md:w-72 md:shrink-0 overflow-y-auto p-3 md:border-r md:border-[var(--color-border)]">
+        <div className="w-full md:w-72 md:shrink-0 overflow-y-auto p-3 md:border-r md:border-[var(--color-border)]">
           <div className="flex items-center justify-between mb-2 gap-2">
             <p className="text-xs text-[var(--color-text-muted)] shrink-0">
               {filteredPlaces.length} {filteredPlaces.length === 1 ? "place" : "places"}
@@ -320,20 +369,12 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
             </div>
           </div>
 
-          {/* Location popover */}
+          {/* Inline location input — appears in document flow, pushes list down */}
           {showLocationInput && !userLocation && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowLocationInput(false)} />
-              <div className="absolute left-3 right-3 top-10 z-20 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-medium text-[var(--color-text-primary)]">Set a starting point</p>
-                <button onClick={() => setShowLocationInput(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors -mr-1">
-                  <X size={14} />
-                </button>
-              </div>
+            <div className="mb-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-3">
               <form onSubmit={handleSetLocation} className="flex flex-col gap-2">
                 <input
-                  autoFocus
+                  ref={locationInputRef}
                   value={locationInput}
                   onChange={(e) => { setLocationInput(e.target.value); setLocationInputStatus("idle"); }}
                   placeholder="City, neighborhood, or address…"
@@ -368,7 +409,6 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
                 <p className="text-xs text-[var(--color-text-muted)] text-center mt-2">Location access was denied.</p>
               )}
             </div>
-            </>
           )}
 
           <div className="flex flex-col gap-1.5">
