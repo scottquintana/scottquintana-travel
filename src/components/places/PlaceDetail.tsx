@@ -14,6 +14,12 @@ interface PlaceDetailProps {
   isModal?: boolean;
 }
 
+const CATEGORY_HEX: Record<string, string> = {
+  food: "#e07040",
+  drink: "#7c4fc4",
+  activity: "#2d9e4a",
+};
+
 const SOCIAL_ICONS: Record<string, string> = {
   instagram: "Instagram",
   twitter: "Twitter / X",
@@ -69,9 +75,18 @@ export function PlaceDetail({ place, citySlug, onClose, isModal }: PlaceDetailPr
             <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">{place.name}</h1>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {(place.categories ?? []).map((c) => (
-              <Badge key={c} variant="category">{formatCategory(c)}</Badge>
-            ))}
+            {(place.categories ?? []).map((c) => {
+              const hex = CATEGORY_HEX[c] ?? "#9ca3af";
+              return (
+                <span
+                  key={c}
+                  className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-[var(--radius-full)] capitalize"
+                  style={{ backgroundColor: `${hex}18`, color: hex, border: `1px solid ${hex}60` }}
+                >
+                  {formatCategory(c)}
+                </span>
+              );
+            })}
             <Badge variant={place.vetted ? "vetted" : "unvetted"}>
               {place.vetted ? "Vetted ✓" : "Unvetted — haven't been yet"}
             </Badge>

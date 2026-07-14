@@ -55,7 +55,7 @@ function CityCard({ city }: { city: CityWithCount }) {
               className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[var(--color-text-muted)] text-sm">
+            <div className="w-full h-full flex items-center justify-center text-[var(--color-accent)] text-sm">
               No photo
             </div>
           )}
@@ -63,7 +63,7 @@ function CityCard({ city }: { city: CityWithCount }) {
         <div className="px-4 pt-4 pb-1">
           <div className="flex items-baseline justify-between gap-2">
             <h2 className="font-semibold text-[var(--color-text-primary)] [font-family:var(--font-display)]">{city.name}</h2>
-            <span className="text-xs text-[var(--color-text-muted)] shrink-0">
+            <span className="text-xs text-[var(--color-accent)] shrink-0">
               {count} {count === 1 ? "place" : "places"}
             </span>
           </div>
@@ -92,7 +92,7 @@ function CityCard({ city }: { city: CityWithCount }) {
           {isClampable && (
             <button
               onClick={() => setExpanded((v) => !v)}
-              className="mt-1 flex items-center gap-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+              className="mt-1 flex items-center gap-0.5 text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors"
             >
               {expanded ? <><ChevronUp size={11} /> Show less</> : <><ChevronDown size={11} /> Show more</>}
             </button>
@@ -113,18 +113,18 @@ export function CitiesClient({ cities }: { cities: CityWithCount[] }) {
   return (
     <>
       <div className="relative mb-8">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-primary)] pointer-events-none" />
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search cities…"
-          className="w-full text-base pl-9 pr-4 py-2.5 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none focus:border-[var(--color-accent)] transition-colors"
+          className="w-full text-base pl-9 pr-4 py-2.5 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] transition-colors"
         />
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-[var(--color-text-muted)] text-sm">No cities match "{query}".</p>
+        <p className="text-[var(--color-accent)] text-sm">No cities match "{query}".</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 items-start">
           {filtered.map((city) => (

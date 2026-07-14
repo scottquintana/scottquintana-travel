@@ -237,6 +237,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
           <div className="absolute inset-0" aria-hidden="true">
             <img src={city.cover_photo} alt="" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/55" />
+            <div className="absolute inset-0 bg-[var(--color-accent)]/30" />
           </div>
         )}
 
@@ -246,7 +247,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
             <Link
               href="/"
               className={city.cover_photo
-                ? OVERLAY_CAPSULE
+                ? "shrink-0 inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border border-[var(--color-accent)]/50 bg-[var(--color-accent)]/35 text-white backdrop-blur-sm hover:bg-[var(--color-accent)]/55 transition-colors"
                 : "shrink-0 inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] transition-colors"
               }
             >
