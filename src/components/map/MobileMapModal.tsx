@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, MapPin, Copy, Check, ExternalLink } from "lucide-react";
+import { X, MapPin, Copy, Check, ExternalLink, Maximize2 } from "lucide-react";
 import Link from "next/link";
 import { CityMap } from "@/components/map/CityMap";
 import { formatCategory, cn } from "@/lib/utils";
@@ -244,11 +244,14 @@ export interface MobileMapModalProps {
   showUnvetted: boolean;
   onToggleCategory: (cat: string) => void;
   onToggleShowUnvetted: () => void;
+  resetToken?: number;
+  onResetView?: () => void;
 }
 
 export function MobileMapModal({
   city, pins, focusedPlace, focusedLocationId, userLocation, onPinClick, onDismissPlace, onClose,
   categories, activeCategories, showUnvetted, onToggleCategory, onToggleShowUnvetted,
+  resetToken, onResetView,
 }: MobileMapModalProps) {
   const [modalVisible, setModalVisible] = useState(false);
   // Keep the last place in state so the sheet can animate out before unmounting
@@ -308,7 +311,18 @@ export function MobileMapModal({
           userLocation={userLocation}
           onPinClick={onPinClick}
           onMapClick={focusedPlace ? onDismissPlace : undefined}
+          resetToken={resetToken}
         />
+
+        {/* Reset view button */}
+        <button
+          onClick={onResetView}
+          title="Reset map view"
+          className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)] text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors"
+        >
+          <Maximize2 size={12} />
+          Reset view
+        </button>
 
         {/* Floating filter bar — fades out when a place is selected */}
         <div className={cn(

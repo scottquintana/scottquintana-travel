@@ -7,7 +7,7 @@ import { CityMap } from "@/components/map/CityMap";
 import { PlaceDetailPanel } from "@/components/places/PlaceDetailPanel";
 import { MobileMapModal } from "@/components/map/MobileMapModal";
 import { formatCategory, haversineDistanceMi, formatDistanceMi } from "@/lib/utils";
-import { Map, LocateFixed, Loader2, X, ArrowRight } from "lucide-react";
+import { Map, LocateFixed, Loader2, X, ArrowRight, Maximize2 } from "lucide-react";
 import { geocodeAddress } from "@/lib/geocode";
 import type { City, Place } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -61,6 +61,8 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
   const [locationInput, setLocationInput] = useState("");
   const [locationInputStatus, setLocationInputStatus] = useState<"idle" | "loading" | "error">("idle");
   const [sortBy, setSortBy] = useState<"az" | "distance">("az");
+  const [mapResetToken, setMapResetToken] = useState(0);
+  const resetMapView = useCallback(() => setMapResetToken((t) => t + 1), []);
 
   const clearLocation = useCallback(() => {
     setUserLocation(null);
@@ -388,7 +390,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
         </div>
 
         {/* Map panel — desktop only */}
-        <div className="hidden md:block flex-1">
+        <div className="hidden md:flex flex-1 relative">
           <CityMap
             pins={mapPins}
             selectedPlaceId={panelPlace?.id ?? hoveredPlaceId}
@@ -396,7 +398,16 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
             userLocation={userLocation}
             onPinClick={handlePinClick}
             onMapClick={closePanel}
+            resetToken={mapResetToken}
           />
+          <button
+            onClick={resetMapView}
+            title="Reset map view"
+            className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)] text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors"
+          >
+            <Maximize2 size={12} />
+            Reset view
+          </button>
         </div>
       </div>
 
@@ -425,6 +436,8 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
           showUnvetted={showUnvetted}
           onToggleCategory={toggleCategory}
           onToggleShowUnvetted={() => setShowUnvetted((v) => !v)}
+          resetToken={mapResetToken}
+          onResetView={resetMapView}
         />
       )}
     </div>
