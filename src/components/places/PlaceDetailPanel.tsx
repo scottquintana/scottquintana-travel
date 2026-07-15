@@ -11,6 +11,7 @@ import type { Place } from "@/lib/types";
 interface PlaceDetailPanelProps {
   place: Place;
   citySlug: string;
+  focusedLocationId?: string | null;
   onClose: () => void;
 }
 
@@ -72,9 +73,11 @@ function AddressActions({ address }: { address: string }) {
   );
 }
 
-export function PlaceDetailPanel({ place, citySlug, onClose }: PlaceDetailPanelProps) {
+export function PlaceDetailPanel({ place, citySlug, focusedLocationId, onClose }: PlaceDetailPanelProps) {
   const dotStyle = categoryDotStyle(place.categories ?? []);
-  const firstLocation = place.locations?.[0];
+  const activeLocation = (focusedLocationId
+    ? place.locations?.find((l) => l.id === focusedLocationId)
+    : null) ?? place.locations?.[0];
   const photo = place.photos?.[0];
 
 
@@ -162,7 +165,7 @@ export function PlaceDetailPanel({ place, citySlug, onClose }: PlaceDetailPanelP
 
         {/* Address + website */}
         <div className="flex flex-col gap-2 px-4 py-2 md:p-0 min-w-0">
-          {firstLocation && <AddressActions address={firstLocation.address} />}
+          {activeLocation && <AddressActions address={activeLocation.address} />}
           {place.website && (
             <a
               href={place.website}

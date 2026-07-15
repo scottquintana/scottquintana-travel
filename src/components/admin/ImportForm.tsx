@@ -10,6 +10,9 @@ import { slugify } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { geocodeAddress, isSpecificAddress } from "@/lib/geocode";
 import type { City, ImportSinglePayload, ImportBulkPayload } from "@/lib/types";
+import { DEFAULT_CATEGORIES } from "@/lib/types";
+
+const ALLOWED_CATEGORIES = new Set(DEFAULT_CATEGORIES as readonly string[]);
 
 interface ImportFormProps {
   city: City;
@@ -18,14 +21,25 @@ interface ImportFormProps {
 type ImportItem = ImportSinglePayload & {
   _valid: boolean;
   _errors: string[];
+  _warnings: string[];
   _state: "pending" | "reviewing" | "saved";
 };
 
-function validatePayload(payload: ImportSinglePayload): string[] {
+function validatePayload(payload: ImportSinglePayload): { errors: string[]; warnings: string[]; cleaned: ImportSinglePayload } {
   const errors: string[] = [];
+  const warnings: string[] = [];
   if (!payload.name) errors.push("name is required");
   if (!payload.locations || payload.locations.length === 0) errors.push("At least one location is required");
-  return errors;
+
+  const rawCats = payload.categories ?? (payload.category ? [payload.category] : []);
+  const invalidCats = rawCats.filter((c) => !ALLOWED_CATEGORIES.has(c));
+  const validCats = rawCats.filter((c) => ALLOWED_CATEGORIES.has(c));
+  if (invalidCats.length > 0) {
+    warnings.push(`Unknown ${invalidCats.length === 1 ? "category" : "categories"} removed: ${invalidCats.join(", ")}`);
+  }
+
+  const cleaned = { ...payload, categories: validCats };
+  return { errors, warnings, cleaned };
 }
 
 export function ImportForm({ city }: ImportFormProps) {
@@ -66,8 +80,8 @@ export function ImportForm({ city }: ImportFormProps) {
         payloads = [parsed as ImportSinglePayload];
       }
       const validated = payloads.map((p) => {
-        const errors = validatePayload(p);
-        return { ...p, _valid: errors.length === 0, _errors: errors, _state: "pending" as const };
+        const { errors, warnings, cleaned } = validatePayload(p);
+        return { ...cleaned, _valid: errors.length === 0, _errors: errors, _warnings: warnings, _state: "pending" as const };
       });
       setItems(validated);
     } catch {
@@ -297,6 +311,13 @@ export function ImportForm({ city }: ImportFormProps) {
                   </ul>
                 )}
 
+                {/* Warnings (e.g. stripped unknown categories) */}
+                {item._warnings?.length > 0 && (
+                  <ul className="px-3 pb-2 text-xs text-amber-600 list-disc list-inside">
+                    {item._warnings.map((w, j) => <li key={j}>{w}</li>)}
+                  </ul>
+                )}
+
                 {/* Inline form */}
                 {item._state === "reviewing" && (
                   <div className="border-t border-[var(--color-border)] p-4 bg-[var(--color-surface)]">
@@ -324,7 +345,7 @@ export function ImportForm({ city }: ImportFormProps) {
 const IMPORT_FORMAT_DOCS = `// Single place
 {
   "name": "Bestia",                  // required
-  "category": "food",                // optional — food | drink | activity | other | custom
+  "category": "food",                // optional — food | drink | activity | stays
   "description": "...",              // optional
   "vetted": true,                    // optional, default false
   "website": "https://...",          // optional

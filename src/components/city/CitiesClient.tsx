@@ -61,6 +61,7 @@ function GridCard({ city }: { city: CityWithCount }) {
   const count = city.places?.[0]?.count ?? 0;
   const [expanded, setExpanded] = useState(false);
   const [isClampable, setIsClampable] = useState(false);
+  const [pressed, setPressed] = useState(false);
   const descRef = useRef<HTMLDivElement>(null);
   const expandedRef = useRef(expanded);
   expandedRef.current = expanded;
@@ -83,8 +84,14 @@ function GridCard({ city }: { city: CityWithCount }) {
   }, [city.description]);
 
   return (
-    <div className="group block rounded-[var(--radius-xl)] overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:border-[var(--color-accent-muted)] transition-all duration-200">
-      <Link href={`/${city.slug}`} className="block active:opacity-80 touch-manipulation">
+    <div
+      className={`group block rounded-[var(--radius-xl)] overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:border-[var(--color-accent-muted)] transition-all duration-150 ${pressed ? "scale-[0.97] opacity-75" : "scale-100 opacity-100"}`}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+    >
+      <Link href={`/${city.slug}`} className="block touch-manipulation">
         <div className="relative h-48 bg-[var(--color-surface-alt)]">
           {city.cover_photo ? (
             <Image src={city.cover_photo} alt={city.name} fill className="object-cover group-hover:scale-[1.02] transition-transform duration-300" />
@@ -121,6 +128,7 @@ function GridCard({ city }: { city: CityWithCount }) {
 function ListRow({ city }: { city: CityWithCount }) {
   const count = city.places?.[0]?.count ?? 0;
   const [expanded, setExpanded] = useState(false);
+  const [pressed, setPressed] = useState(false);
 
   return (
     <div className="border-b border-[var(--color-border)] last:border-0">
@@ -128,7 +136,11 @@ function ListRow({ city }: { city: CityWithCount }) {
         <div className="flex items-center gap-1 min-w-0">
           <Link
             href={`/${city.slug}`}
-            className="font-medium text-[var(--color-text-primary)] [font-family:var(--font-display)] hover:text-[var(--color-accent)] transition-colors active:opacity-70 touch-manipulation truncate"
+            className={`font-medium [font-family:var(--font-display)] hover:text-[var(--color-accent)] transition-all duration-150 touch-manipulation truncate ${pressed ? "text-[var(--color-accent)] opacity-60 scale-[0.97]" : "text-[var(--color-text-primary)]"}`}
+            onPointerDown={() => setPressed(true)}
+            onPointerUp={() => setPressed(false)}
+            onPointerCancel={() => setPressed(false)}
+            onPointerLeave={() => setPressed(false)}
           >
             {city.name}
           </Link>

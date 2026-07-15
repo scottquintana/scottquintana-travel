@@ -248,8 +248,8 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
             <Link
               href="/"
               className={city.cover_photo
-                ? "shrink-0 inline-flex items-center gap-1 text-xs font-medium text-white/90 hover:text-white transition-colors [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]"
-                : "shrink-0 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+                ? "shrink-0 inline-flex items-center gap-1 text-sm font-medium text-white/90 hover:text-white transition-colors [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]"
+                : "shrink-0 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
               }
             >
               ← All cities
@@ -464,6 +464,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
         <PlaceDetailPanel
           place={panelPlace}
           citySlug={city.slug}
+          focusedLocationId={focusedLocationId}
           onClose={closePanel}
         />
       )}

@@ -79,7 +79,7 @@ const PEEK_H = "38vh";
 const EXPANDED_H = "68vh";
 const DRAG_THRESHOLD = 60;
 
-function MobileDetailSheet({ place, citySlug, visible, onDismiss }: { place: Place; citySlug: string; visible: boolean; onDismiss: () => void }) {
+function MobileDetailSheet({ place, citySlug, focusedLocationId, visible, onDismiss }: { place: Place; citySlug: string; focusedLocationId: string | null; visible: boolean; onDismiss: () => void }) {
   const [snap, setSnap] = useState<"peek" | "expanded">("peek");
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -123,7 +123,9 @@ function MobileDetailSheet({ place, citySlug, visible, onDismiss }: { place: Pla
     });
   };
 
-  const firstLocation = place.locations?.[0];
+  const firstLocation = (focusedLocationId
+    ? place.locations?.find((l) => l.id === focusedLocationId)
+    : null) ?? place.locations?.[0];
   const dotStyle = categoryDotStyle(place.categories ?? []);
 
   const translateY = isDragging && dragOffset > 0
@@ -324,11 +326,11 @@ export function MobileMapModal({
 
         {/* Floating filter bar + reset button row */}
         <div className={cn(
-          "absolute top-3 left-3 right-3 z-10 flex items-center gap-2",
+          "absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-2",
           filtersHidden ? "pointer-events-none" : ""
         )}>
           <div className={cn(
-            "flex-1 min-w-0 transition-opacity duration-200",
+            "transition-opacity duration-200",
             filtersHidden ? "opacity-0" : "opacity-100"
           )}>
           <div className="flex items-center gap-1.5 bg-[var(--color-surface)] rounded-[var(--radius-full)] shadow-[var(--shadow-md)] px-3 py-2 overflow-x-auto">
@@ -351,15 +353,6 @@ export function MobileMapModal({
                 </button>
               );
             })}
-            <label className="shrink-0 flex items-center gap-1.5 ml-1 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={!showUnvetted}
-                onChange={onToggleShowUnvetted}
-                className="w-3 h-3 rounded accent-[var(--color-accent)]"
-              />
-              <span className="text-xs text-[var(--color-text-muted)]">Vetted</span>
-            </label>
           </div>
           </div>
 
@@ -387,6 +380,7 @@ export function MobileMapModal({
         <MobileDetailSheet
           place={displayedPlace}
           citySlug={city.slug}
+          focusedLocationId={focusedLocationId}
           visible={sheetVisible}
           onDismiss={onDismissPlace}
         />

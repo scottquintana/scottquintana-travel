@@ -1,6 +1,7 @@
 "use client";
 
-import { GoogleMap, useJsApiLoader, OverlayView, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, InfoWindow } from "@react-google-maps/api";
+import { createPortal } from "react-dom";
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { Place, PlaceLocation } from "@/lib/types";
 
@@ -11,27 +12,21 @@ interface MapPin {
 
 interface CityMapProps {
   pins: MapPin[];
-  /** Highlighted pin (hover or click) — controls color/size only */
   selectedPlaceId?: string | null;
-  /** Explicitly focused location (click only) — triggers pan + InfoWindow */
   focusedLocationId?: string | null;
   userLocation?: { lat: number; lng: number } | null;
   onPinClick?: (placeId: string, locationId: string) => void;
   onMapClick?: () => void;
-  /** Increment to trigger fitAll (zoom to show all pins) */
   resetToken?: number;
-  /** Increment after container resizes (e.g. modal slide-in) to re-sync OverlayView positions */
   resizeToken?: number;
-  /** Color for the selected/highlighted pin (defaults to current accent) */
   selectedPinColor?: string;
-  /** Apply a dark tile style */
   darkMap?: boolean;
 }
 
 const mapContainerStyle = { width: "100%", height: "100%" };
-// Stable reference — @react-google-maps/api compares center by reference (===)
-// and calls map.setCenter() on every render if it's a new object literal.
+// Stable reference — library uses reference equality to decide whether to call map.setCenter()
 const INITIAL_CENTER = { lat: 34.0195, lng: -118.4912 };
+const HIT = 44; // tap target size in px
 
 const LIGHT_MAP_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
@@ -70,6 +65,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   food: "#e07040",
   drink: "#7c4fc4",
   activity: "#2d9e4a",
+  stays: "#0891b2",
 };
 
 function pinFill(categories: string[], isSelected: boolean, selectedColor = "#2d6a64"): string {
@@ -95,6 +91,79 @@ function fitAll(map: google.maps.Map, pins: MapPin[]) {
   map.fitBounds(bounds, 48);
 }
 
+/**
+ * TransformOverlay — wraps a raw google.maps.OverlayView but positions via
+ * transform: translate(x, y) instead of left/top. Transforms run on the
+ * compositor thread and stay in sync with tile movement during pan, preventing
+ * the one-frame lag that causes pins to flash to wrong intermediate positions.
+ */
+function TransformOverlay({
+  map,
+  lat,
+  lng,
+  offsetX = 0,
+  offsetY = 0,
+  children,
+}: {
+  map: google.maps.Map;
+  lat: number;
+  lng: number;
+  offsetX?: number;
+  offsetY?: number;
+  children: React.ReactNode;
+}) {
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  const overlayRef = useRef<google.maps.OverlayView | null>(null);
+  const posRef = useRef({ lat, lng, offsetX, offsetY });
+  posRef.current = { lat, lng, offsetX, offsetY };
+
+  useEffect(() => {
+    const div = document.createElement("div");
+    div.style.position = "absolute";
+    div.style.left = "0";
+    div.style.top = "0";
+    div.style.willChange = "transform";
+
+    const overlay = new google.maps.OverlayView();
+
+    overlay.onAdd = function () {
+      this.getPanes()!.overlayMouseTarget.appendChild(div);
+      setContainer(div);
+    };
+
+    overlay.draw = function () {
+      const proj = this.getProjection();
+      if (!proj) return;
+      const { lat: la, lng: ln, offsetX: ox, offsetY: oy } = posRef.current;
+      const pos = proj.fromLatLngToDivPixel(new google.maps.LatLng(la, ln));
+      if (pos) {
+        div.style.transform = `translate(${pos.x + ox}px, ${pos.y + oy}px)`;
+      }
+    };
+
+    overlay.onRemove = function () {
+      div.remove();
+      setContainer(null);
+    };
+
+    overlay.setMap(map);
+    overlayRef.current = overlay;
+
+    return () => {
+      overlay.setMap(null);
+      overlayRef.current = null;
+    };
+  }, [map]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Redraw when position changes
+  useEffect(() => {
+    overlayRef.current?.draw();
+  }, [lat, lng]);
+
+  if (!container) return null;
+  return createPortal(children, container);
+}
+
 export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation, onPinClick, onMapClick, resetToken, resizeToken, selectedPinColor, darkMap }: CityMapProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [cssAccentColor, setCssAccentColor] = useState("#7091a8");
@@ -114,7 +183,6 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
   }, []);
 
   const [isPanning, setIsPanning] = useState(false);
-  // Refs so focus/pan effects always see fresh values without extra re-runs
   const mapRef = useRef<google.maps.Map | null>(null);
   const pinsRef = useRef(pins);
   pinsRef.current = pins;
@@ -131,36 +199,22 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
   });
 
-  const dragListenersRef = useRef<google.maps.MapsEventListener[]>([]);
-
   const onLoad = useCallback((m: google.maps.Map) => {
     mapRef.current = m;
     setMap(m);
-    // Hide pins during user-initiated drag to prevent OverlayView flash
-    dragListenersRef.current = [
-      google.maps.event.addListener(m, "dragstart", () => setIsPanning(true)),
-      google.maps.event.addListener(m, "idle", () => setIsPanning(false)),
-    ];
   }, []);
   const onUnmount = useCallback(() => {
-    dragListenersRef.current.forEach((l) => google.maps.event.removeListener(l));
-    dragListenersRef.current = [];
     mapRef.current = null;
     setMap(null);
   }, []);
 
-  // On load: zoom to focused location if one is already set, otherwise fit all pins.
-  // Uses setCenter/setZoom (instant, no animation) to avoid OverlayView misalignment
-  // during animated pan on first render.
+  // On load: zoom to focused location if set, otherwise fit all pins
   useEffect(() => {
     if (!map) return;
     const fid = focusedLocationIdRef.current;
     if (fid) {
       const pin = pinsRef.current.find((p) => p.location.id === fid);
-      if (pin) {
-        map.setCenter({ lat: pin.location.lat, lng: pin.location.lng });
-        map.setZoom(15);
-      }
+      if (pin) { map.setCenter({ lat: pin.location.lat, lng: pin.location.lng }); map.setZoom(15); }
     } else {
       fitAll(map, pinsRef.current);
     }
@@ -171,9 +225,9 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
     const m = mapRef.current;
     if (!m || resetToken === undefined) return;
     fitAll(m, pinsRef.current);
-  }, [resetToken]); // intentionally excludes map/pins — using refs
+  }, [resetToken]);
 
-  // Re-sync OverlayView positions after the map container finishes resizing/animating
+  // Re-sync overlay positions after container resize
   useEffect(() => {
     const m = mapRef.current;
     if (!m || resizeToken === undefined) return;
@@ -185,15 +239,14 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
     } else {
       fitAll(m, pinsRef.current);
     }
-  }, [resizeToken]); // intentionally excludes map/pins — using refs
+  }, [resizeToken]);
 
-  // Pan to focused location; hide other pins during animation to avoid flash
+  // Pan to focused location; briefly hide non-focused pins to avoid OverlayView jump during panTo animation
   useEffect(() => {
     const m = mapRef.current;
     if (!m || !focusedLocationId) return;
     const pin = pinsRef.current.find((p) => p.location.id === focusedLocationId);
     if (!pin) return;
-
     if (idleListenerRef.current) google.maps.event.removeListener(idleListenerRef.current);
     setIsPanning(true);
     m.panTo({ lat: pin.location.lat, lng: pin.location.lng });
@@ -202,7 +255,7 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
       setIsPanning(false);
       idleListenerRef.current = null;
     });
-  }, [focusedLocationId]); // intentionally excludes map/pins — using refs
+  }, [focusedLocationId]);
 
   if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
     return (
@@ -235,18 +288,19 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
       onUnmount={onUnmount}
       onClick={() => { if (!pinJustClickedRef.current) onMapClick?.(); }}
     >
-      {pins.map(({ place, location }) => {
+      {map && pins.map(({ place, location }) => {
         const isSelected = selectedPlaceId === place.id;
         const isFocused = focusedLocationId === location.id;
         const size = isSelected ? 20 : 14;
-        const HIT = 44;
         const hidden = isPanning && !isFocused;
         return (
-          <OverlayView
+          <TransformOverlay
             key={location.id}
-            position={{ lat: location.lat, lng: location.lng }}
-            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-            getPixelPositionOffset={() => ({ x: -HIT / 2, y: -HIT / 2 })}
+            map={map}
+            lat={location.lat}
+            lng={location.lng}
+            offsetX={-HIT / 2}
+            offsetY={-HIT / 2}
           >
             <div
               onTouchStart={(e) => e.stopPropagation()}
@@ -282,21 +336,23 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
                 }}
               />
             </div>
-          </OverlayView>
+          </TransformOverlay>
         );
       })}
 
-      {userLocation && (
-        <OverlayView
-          position={{ lat: userLocation.lat, lng: userLocation.lng }}
-          mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-          getPixelPositionOffset={() => ({ x: -12, y: -12 })}
+      {map && userLocation && (
+        <TransformOverlay
+          map={map}
+          lat={userLocation.lat}
+          lng={userLocation.lng}
+          offsetX={-12}
+          offsetY={-12}
         >
           <div style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
             <div className="animate-ping" style={{ position: "absolute", width: 20, height: 20, borderRadius: "50%", background: "rgba(66,133,244,0.35)" }} />
             <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#4285F4", border: "2.5px solid white", boxShadow: "0 1px 5px rgba(0,0,0,0.35)", position: "relative" }} />
           </div>
-        </OverlayView>
+        </TransformOverlay>
       )}
 
       {focusedPin && (
