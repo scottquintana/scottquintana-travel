@@ -24,66 +24,80 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
 ADMIN_PASSWORD=
-GEOCODING_API_KEY=        # optional — separate key without referrer restrictions for server-side geocoding
+GEOCODING_API_KEY=        # optional - separate key without referrer restrictions for server-side geocoding
 ```
 
 ## Features
 
-- **Cities page** — searchable grid with place count per city
-- **City page** — split list + map on desktop; list-only with full-screen map modal on mobile
-- **Place cards** — category color, vetted indicator, distance from set location
-- **Multi-location places** — one DB entry, separate list card per location; each sorts by distance independently
-- **Distance** — set location via GPS or typed address; haversine distance shown per card, sorts the list
-- **Full place page** — `/{citySlug}/{placeSlug}` with description, recommendations, location + map links, website, socials, photos
-- **Dark mode** — automatic via `prefers-color-scheme`
-- **Admin** — city/place CRUD, bulk JSON import with auto-geocoding
+- **Cities page** - searchable grid or list view with place count per city; sticky header when scrolled
+- **City page** - split list + map on desktop; list-only with full-screen map modal on mobile
+- **Place cards** - category color dot, vetted indicator, distance from set location
+- **Multi-location places** - one DB entry, separate list card per location; each sorts by distance independently
+- **Distance** - set location via GPS or typed address; haversine distance shown per card, sorts the list
+- **Full place page** - `/{citySlug}/{placeSlug}` with description, recommendations, location + map links, website, socials, photos
+- **Dark mode** - automatic via `prefers-color-scheme`
+- **Admin** - city/place CRUD, bulk JSON import with auto-geocoding, bulk edit, photo fetching
 
 ## Project structure
 
 ```
 src/
   app/
-    page.tsx                  # Cities home (server)
-    [citySlug]/page.tsx       # City page (server)
-    [citySlug]/[placeSlug]/   # Full place detail page
-    admin/                    # Admin panel
-    api/admin/                # login / logout / geocode routes
+    page.tsx                        # Cities home (server)
+    [citySlug]/page.tsx             # City page (server)
+    [citySlug]/[placeSlug]/         # Full place detail page
+    admin/                          # Admin panel
+      cities/[id]/bulk-edit/        # Bulk edit all places in a city
+      cities/[id]/import/           # JSON import
+    api/admin/                      # login / logout / geocode routes
   components/
     city/
-      CitiesClient            # Searchable cities grid
-      CityPageClient          # List + map, all interaction state
+      CitiesClient                  # Searchable cities grid with view toggle
+      CityPageClient                # List + map, all interaction state
     map/
-      CityMap                 # Google Maps wrapper
-      MobileMapModal          # Full-screen map modal + detail sheet (mobile only)
+      CityMap                       # Google Maps wrapper
+      MobileMapModal                # Full-screen map modal + detail sheet (mobile only)
     places/
-      PlaceCard               # List row card
-      PlaceDetailPanel        # Desktop bottom strip
-      PlaceDetail             # Full place page layout
+      PlaceCard                     # List row card
+      PlaceDetailPanel              # Desktop bottom strip shown on pin/card click
+      PlaceDetail                   # Full place page layout
     admin/
-      ImportForm              # Bulk JSON import
-      InlineImportPlaceForm   # Per-item review before saving
-    ui/                       # Button, Input, Badge, Label, Textarea
+      ImportForm                    # Bulk JSON import
+      InlineImportPlaceForm         # Per-item review before saving
+      BulkEditPlaces                # Edit description, vetted, website, categories for all places at once
+      FetchPhotosSection            # Fetch missing photos from Google Places for all places in a city
+    NavigationOverlay               # Loading overlay shown during page transitions
+    ui/                             # Button, Input, Badge, Label, Textarea
   lib/
     types.ts
-    utils.ts                  # cn, slugify, haversineDistanceMi, formatDistanceMi, etc.
-    geocode.ts                # geocodeAddress() — calls server-side route
-data/                         # Local JSON import files (gitignored)
+    utils.ts                        # cn, slugify, haversineDistanceMi, formatDistanceMi, etc.
+    geocode.ts                      # geocodeAddress() - calls server-side route
+    siteConfig.ts                   # Site name, intro text, owner name, contact email
+    categoryColors.ts               # Category hex colors shared across components
+  proxy.ts                          # Auth middleware - protects /admin/* routes
+data/                               # Local JSON import files (gitignored)
 ```
 
 ## Admin
 
-The admin panel lives at `/admin` (password-protected). From there you can create cities, manage places, and import places from JSON.
+The admin panel lives at `/admin` (password-protected). From there you can:
+
+- Create and edit cities
+- Create, edit, and delete places
+- Bulk edit all places in a city (description, vetted status, website, categories) at `/admin/cities/[id]/bulk-edit`
+- Fetch missing photos from Google Places for all places in a city
+- Import places from JSON at `/admin/cities/[id]/import`
 
 ## Importing places
 
-Paste or drop a JSON file at `/admin/cities/[id]/import`. Addresses starting with a street number are auto-geocoded on save. The import form also auto-geocodes on load, so coordinates are filled in before you review each entry.
+Paste or drop a JSON file at `/admin/cities/[id]/import`. Addresses starting with a street number are auto-geocoded on save. The import form also auto-geocodes on load, so coordinates are filled in before you review each entry. Unknown categories are stripped automatically on parse.
 
 ### Single place
 
 ```json
 {
   "name": "Bestia",
-  "category": "food",
+  "categories": ["food"],
   "description": "...",
   "vetted": true,
   "website": "https://...",
@@ -119,7 +133,7 @@ Paste or drop a JSON file at `/admin/cities/[id]/import`. Addresses starting wit
 | Field | Required | Notes |
 |---|---|---|
 | name | yes | |
-| categories | no | array — `["food"]`, `["food", "drink"]`, etc. Also accepts legacy `category` string |
+| categories | no | array - valid values: `food`, `drink`, `activity`, `stays`. Also accepts legacy `category` string. Unknown values are stripped on import. |
 | description | no | |
 | vetted | no | boolean, default false |
 | website | no | |
@@ -134,7 +148,7 @@ Paste or drop a JSON file at `/admin/cities/[id]/import`. Addresses starting wit
 
 ### Notes on coordinates
 
-If an address starts with a street number, coordinates are looked up automatically and override whatever lat/lng is in the JSON. For a generic address like "Los Angeles, CA", the provided lat/lng is used as-is — make sure it's accurate or the pin will be wrong.
+If an address starts with a street number, coordinates are looked up automatically and override whatever lat/lng is in the JSON. For a generic address like "Los Angeles, CA", the provided lat/lng is used as-is - make sure it is accurate or the pin will be wrong.
 
 ## Google Maps list scraper
 
@@ -156,17 +170,17 @@ pip install playwright browser-cookie3 requests
 playwright install chromium
 ```
 
-- **playwright** — headless browser for scraping the Maps list
-- **browser-cookie3** — reads your existing Chrome Google session so the script can access private lists without automating sign-in (Google blocks that)
-- **requests** — Places API calls
+- **playwright** - headless browser for scraping the Maps list
+- **browser-cookie3** - reads your existing Chrome Google session so the script can access private lists without automating sign-in (Google blocks that)
+- **requests** - Places API calls
 
 ### API keys
 
 The script uses two environment variables:
 
 ```
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=   # already required for the app — used for Places API lookups
-GEOCODING_API_KEY=                 # optional — if set, used instead of the above for Places API calls
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=   # already required for the app - used for Places API lookups
+GEOCODING_API_KEY=                 # optional - if set, used instead of the above for Places API calls
 ```
 
 The Places API must have the **Places API** enabled in Google Cloud Console. The same key used for the Maps JavaScript API should work.
@@ -179,7 +193,7 @@ The script reads cookies from your local Chrome profile. You need to be logged i
 python3 scripts/scrape_maps_list.py --login
 ```
 
-This saves your session to `data/google_auth.json` (gitignored). Re-run `--login` any time you see a "Choose an account" screen in the debug screenshot — it means the saved session expired.
+This saves your session to `data/google_auth.json` (gitignored). Re-run `--login` any time you see a "Choose an account" screen in the debug screenshot - it means the saved session expired.
 
 ### Usage
 
@@ -200,7 +214,7 @@ Output is written to `data/<name>.json` and is ready to paste or drop into `/adm
 
 ### If Google changes the DOM
 
-The script is fragile by nature — Google Maps is a React app with generated class names that can change without notice. Two things are most likely to break:
+The script is fragile by nature - Google Maps is a React app with generated class names that can change without notice. Two things are most likely to break:
 
 **Place name selector** (`PLACE_NAME_SEL` at the top of the file): Run with `--debug`, open browser DevTools, inspect a place name in the sidebar, and update the selector to match the new class names.
 
@@ -215,8 +229,6 @@ The app is designed so that most visual changes can be made in a small number of
 ### Site name, intro, and contact
 
 Open `src/lib/siteConfig.ts`. Every piece of site identity lives there: the hero title, the intro paragraph, the owner name used in page titles, and the contact email on place detail pages. Change those values and the whole site updates.
-
-
 
 ### Colors, fonts, radius, and shadows
 
@@ -240,4 +252,4 @@ A few values are intentionally hard-coded because they are one-off design detail
 
 ## Deployment
 
-Hosted on Vercel, auto-deploys on push to `main`. Custom domain `travel.scottquintana.com` — DNS via Netlify CNAME to `cname.vercel-dns.com`.
+Hosted on Vercel. Set the environment variables listed above in the Vercel project settings, then push to `main` to deploy. Add a custom domain in the Vercel dashboard if needed.
