@@ -47,14 +47,14 @@ function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode
 }
 
 const mdComponents = {
-  p: ({ children }: { children: React.ReactNode }) => <p className="my-1 first:mt-0">{children}</p>,
-  a: ({ href, children }: { href?: string; children: React.ReactNode }) => (
+  p: ({ children }: { children?: React.ReactNode }) => <p className="my-1 first:mt-0">{children}</p>,
+  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
     <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] hover:underline">{children}</a>
   ),
-  strong: ({ children }: { children: React.ReactNode }) => <strong className="font-semibold text-[var(--color-text-primary)]">{children}</strong>,
-  ul: ({ children }: { children: React.ReactNode }) => <ul className="my-1 ml-4 list-disc">{children}</ul>,
-  ol: ({ children }: { children: React.ReactNode }) => <ol className="my-1 ml-4 list-decimal">{children}</ol>,
-  li: ({ children }: { children: React.ReactNode }) => <li className="my-0">{children}</li>,
+  strong: ({ children }: { children?: React.ReactNode }) => <strong className="font-semibold text-[var(--color-text-primary)]">{children}</strong>,
+  ul: ({ children }: { children?: React.ReactNode }) => <ul className="my-1 ml-4 list-disc">{children}</ul>,
+  ol: ({ children }: { children?: React.ReactNode }) => <ol className="my-1 ml-4 list-decimal">{children}</ol>,
+  li: ({ children }: { children?: React.ReactNode }) => <li className="my-0">{children}</li>,
 };
 
 function GridCard({ city }: { city: CityWithCount }) {
