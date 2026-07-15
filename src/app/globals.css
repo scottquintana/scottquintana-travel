@@ -1,40 +1,90 @@
 @import "tailwindcss";
 
+/*
+  Theme tokens — all visual customization starts here.
+
+  This project uses Tailwind CSS v4, which means there is no tailwind.config.js.
+  Colors, fonts, radius, and shadows are defined as CSS custom properties inside
+  the @theme block below. Components reference them as var(--token-name).
+
+  To retheme the app: change the values here. Dark mode overrides are in the
+  @media block further down — update those to match.
+
+  One exception: category colors (food, drink, activity, stays) are defined in
+  src/lib/categoryColors.ts because they are also used in JavaScript for map pins
+  and inline gradient styles. Change them there, and the whole app updates.
+  Fonts are loaded in src/app/layout.tsx via next/font — update the import there
+  to swap to a different Google Font, then update --font-sans below to match.
+*/
+
 @theme {
-  /* Colors */
+  /* Page background — the canvas behind all content */
   --color-background: #f0efed;
+
+  /* Card and panel backgrounds */
   --color-surface: #fafaf8;
+  /* Secondary surface — used for hover states, input fills, alt cards */
   --color-surface-alt: #d6cfb5;
+
+  /* Borders — use border-subtle for very light dividers */
   --color-border: #c4bca8;
   --color-border-subtle: #ddd8cc;
 
+  /* Body copy and UI labels, lightest to darkest */
   --color-text-primary: #2e2e2e;
   --color-text-secondary: #584e40;
   --color-text-muted: #a27e69;
 
+  /*
+    Accent — the brand color used on links, active states, the Map button,
+    selected list cards, filter pills, and the accent dot on the cities page.
+    accent-hover is the pressed/hover shade.
+    accent-light is the tinted background used on recommendation badges.
+    accent-muted is a softer version used on hover borders.
+  */
   --color-accent: #7091a8;
   --color-accent-hover: #587890;
   --color-accent-light: #dde6ee;
   --color-accent-muted: #8aa4b8;
 
+  /* Semantic colors — used for form validation and status indicators */
   --color-danger: #dc2626;
   --color-danger-light: #fef2f2;
   --color-warning: #d97706;
+  --color-warning-light: #fffbeb;    /* background of unvetted badge */
   --color-success: #16a34a;
+  --color-success-light: #ecfdf5;    /* background of vetted badge, check icon color */
 
-  /* Typography */
+  /*
+    Fonts — --font-sans is used for all body and UI text.
+    To change the body font: update the Figtree import in src/app/layout.tsx
+    to your chosen Google Font, then change --font-sans to var(--font-yourfont, ...).
+    --font-display is used for city names and headings (currently Playfair Display).
+    To change the heading font: update the Playfair_Display import in layout.tsx
+    and change --font-display below.
+    --font-mono is used only in the admin import textarea.
+  */
   --font-sans: var(--font-figtree, ui-sans-serif, system-ui, sans-serif);
-  --font-serif: ui-serif, Georgia, "Times New Roman", serif;
+  --font-display: var(--font-playfair, ui-serif, Georgia, serif);
   --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
 
-  /* Spacing / radius */
+  /*
+    Corner radius — used on cards, buttons, badges, and inputs.
+    radius-md is the default for buttons and inputs.
+    radius-xl is used on city cards (the larger grid cells).
+    radius-full is used for pill-shaped filter buttons and badges.
+    Increasing all of these will give the app a rounder feel.
+  */
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-full: 9999px;
 
-  /* Shadows */
+  /*
+    Shadows — applied to cards on hover, the detail panel, and the map modal.
+    Reducing these to "none" gives a flat look.
+  */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
@@ -43,7 +93,7 @@
 body {
   background-color: var(--color-background);
   color: var(--color-text-primary);
-  font-family: var(--font-figtree, ui-sans-serif, system-ui, sans-serif);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -51,14 +101,15 @@ input, textarea, select, button {
   font-family: inherit;
 }
 
-/* Remove iOS blue tap flash; add opacity feedback for all links */
-a {
+/* Remove iOS blue tap flash; show opacity dip on tap for all links and buttons */
+a, button {
   -webkit-tap-highlight-color: transparent;
 }
-a:active {
+a:active, button:active {
   opacity: 0.6;
 }
 
+/* Dark mode overrides — mirrors the @theme block above */
 @media (prefers-color-scheme: dark) {
   :root {
     --color-background: #1c1c1c;
@@ -79,12 +130,13 @@ a:active {
     --color-danger: #ef4444;
     --color-danger-light: #2d1212;
     --color-warning: #f59e0b;
+    --color-warning-light: #1c1200;
     --color-success: #22c55e;
+    --color-success-light: #052e16;
   }
 }
 
-
-/* Tighten Google Maps InfoWindow — remove excess padding and close button */
+/* Google Maps InfoWindow — tighten padding and hide the default close button */
 .gm-style .gm-style-iw-c {
   padding: 0 !important;
   border-radius: 8px !important;

@@ -4,6 +4,7 @@ import { GoogleMap, useJsApiLoader, InfoWindow } from "@react-google-maps/api";
 import { createPortal } from "react-dom";
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { Place, PlaceLocation } from "@/lib/types";
+import { CATEGORY_COLORS, CATEGORY_COLOR_DEFAULT } from "@/lib/categoryColors";
 
 interface MapPin {
   place: Place;
@@ -67,22 +68,15 @@ const BASE_MAP_OPTIONS = {
   fullscreenControl: false,
 };
 
-const CATEGORY_COLORS: Record<string, string> = {
-  food: "#e07040",
-  drink: "#7c4fc4",
-  activity: "#2d9e4a",
-  stays: "#0891b2",
-};
-
 function pinFill(categories: string[], isSelected: boolean, selectedColor = "#2d6a64"): string {
   if (isSelected) return selectedColor;
   const cats = categories.filter(Boolean);
   if (cats.length >= 2) {
-    const c1 = CATEGORY_COLORS[cats[0]] ?? "#6b7280";
-    const c2 = CATEGORY_COLORS[cats[1]] ?? "#6b7280";
+    const c1 = CATEGORY_COLORS[cats[0]] ?? CATEGORY_COLOR_DEFAULT;
+    const c2 = CATEGORY_COLORS[cats[1]] ?? CATEGORY_COLOR_DEFAULT;
     return `linear-gradient(135deg, ${c1} 50%, ${c2} 50%)`;
   }
-  return CATEGORY_COLORS[cats[0]] ?? "#6b7280";
+  return CATEGORY_COLORS[cats[0]] ?? CATEGORY_COLOR_DEFAULT;
 }
 
 function fitAll(map: google.maps.Map, pins: MapPin[]) {

@@ -6,33 +6,22 @@ import Link from "next/link";
 import { CityMap } from "@/components/map/CityMap";
 import { formatCategory, cn } from "@/lib/utils";
 import type { City, Place, PlaceLocation } from "@/lib/types";
+import { CATEGORY_COLORS, CATEGORY_COLOR_DEFAULT } from "@/lib/categoryColors";
 
 interface MapPin {
   place: Place;
   location: PlaceLocation;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  food: "#e07040",
-  drink: "#7c4fc4",
-  activity: "#2d9e4a",
-};
-
 function categoryDotStyle(categories: string[]): React.CSSProperties {
   const cats = (categories ?? []).filter(Boolean);
   if (cats.length >= 2) {
-    const c1 = CATEGORY_COLORS[cats[0]] ?? "#9ca3af";
-    const c2 = CATEGORY_COLORS[cats[1]] ?? "#9ca3af";
+    const c1 = CATEGORY_COLORS[cats[0]] ?? CATEGORY_COLOR_DEFAULT;
+    const c2 = CATEGORY_COLORS[cats[1]] ?? CATEGORY_COLOR_DEFAULT;
     return { background: `linear-gradient(135deg, ${c1} 50%, ${c2} 50%)` };
   }
-  return { background: CATEGORY_COLORS[cats[0]] ?? "#9ca3af" };
+  return { background: CATEGORY_COLORS[cats[0]] ?? CATEGORY_COLOR_DEFAULT };
 }
-
-const CATEGORY_TEXT_COLOR: Record<string, string> = {
-  food: "#e07040",
-  drink: "#7c4fc4",
-  activity: "#2d9e4a",
-};
 
 function AddressActions({ address }: { address: string }) {
   const [copied, setCopied] = useState(false);
@@ -60,7 +49,7 @@ function AddressActions({ address }: { address: string }) {
           onClick={copy}
           className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] transition-colors"
         >
-          {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+          {copied ? <Check size={12} className="text-[var(--color-success)]" /> : <Copy size={12} />}
           {copied ? "Copied" : "Copy address"}
         </button>
         <button
@@ -159,12 +148,12 @@ function MobileDetailSheet({ place, citySlug, focusedLocationId, visible, onDism
         <div className="flex items-center gap-2 mb-3">
           <div className="w-2.5 h-2.5 rounded-full shrink-0" style={dotStyle} />
           <span className="font-semibold text-base text-[var(--color-text-primary)]">{place.name}</span>
-          {place.vetted && <Check size={14} className="text-emerald-500 shrink-0" />}
+          {place.vetted && <Check size={14} className="text-[var(--color-success)] shrink-0" />}
           <span className="ml-auto flex items-center gap-1 text-xs font-medium">
             {(place.categories ?? []).map((cat, i) => (
               <span key={cat}>
                 {i > 0 && <span className="text-[var(--color-text-muted)] mx-0.5">·</span>}
-                <span style={{ color: CATEGORY_TEXT_COLOR[cat] ?? "var(--color-text-muted)" }} className="capitalize">
+                <span style={{ color: CATEGORY_COLORS[cat] ?? "var(--color-text-muted)" }} className="capitalize">
                   {formatCategory(cat)}
                 </span>
               </span>
@@ -336,7 +325,7 @@ export function MobileMapModal({
           <div className="flex items-center gap-1.5 bg-[var(--color-surface)] rounded-[var(--radius-full)] shadow-[var(--shadow-md)] px-3 py-2 overflow-x-auto">
             {categories.map((cat) => {
               const active = activeCategories.has(cat);
-              const color = CATEGORY_COLORS[cat] ?? "#6b7280";
+              const color = CATEGORY_COLORS[cat] ?? CATEGORY_COLOR_DEFAULT;
               return (
                 <button
                   key={cat}

@@ -7,6 +7,7 @@ import { formatCategory, googleMapsUrl, appleMapsUrl } from "@/lib/utils";
 import { useState } from "react";
 import { MapPin, Globe, Share2, ExternalLink, X } from "lucide-react";
 import type { Place } from "@/lib/types";
+import { CATEGORY_COLORS, CATEGORY_COLOR_DEFAULT } from "@/lib/categoryColors";
 
 interface PlaceDetailProps {
   place: Place;
@@ -15,12 +16,6 @@ interface PlaceDetailProps {
   isModal?: boolean;
 }
 
-const CATEGORY_HEX: Record<string, string> = {
-  food: "#e07040",
-  drink: "#7c4fc4",
-  activity: "#2d9e4a",
-  stays: "#0891b2",
-};
 
 const SOCIAL_ICONS: Record<string, string> = {
   instagram: "Instagram",
@@ -80,7 +75,7 @@ export function PlaceDetail({ place, citySlug, onClose, isModal }: PlaceDetailPr
           </div>
           <div className="flex flex-wrap gap-1.5">
             {(place.categories ?? []).map((c) => {
-              const hex = CATEGORY_HEX[c] ?? "#9ca3af";
+              const hex = CATEGORY_COLORS[c] ?? CATEGORY_COLOR_DEFAULT;
               return (
                 <span
                   key={c}

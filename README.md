@@ -208,6 +208,30 @@ The script is fragile by nature — Google Maps is a React app with generated cl
 
 When either breaks, the script logs an error with instructions and saves a screenshot to `data/debug_list.png`.
 
+## Customization
+
+The app is designed so that most visual changes can be made in two files without touching component code.
+
+### Colors, fonts, radius, and shadows
+
+Open `src/app/globals.css`. The `@theme {}` block at the top defines every token the app uses. Comments in that file explain what each token controls. Change a value there and it propagates everywhere.
+
+The dark mode equivalents are in the `@media (prefers-color-scheme: dark)` block in the same file.
+
+**Font note:** fonts are loaded in `src/app/layout.tsx` via `next/font/google`. To swap fonts, change the import there, then update `--font-sans` or `--font-display` in globals.css to reference the new CSS variable that `next/font` injects.
+
+### Category colors
+
+Category colors (food, drink, activity, stays) are defined in `src/lib/categoryColors.ts`. They are separate from globals.css because they are used in JavaScript for map pin fills and inline gradient styles, which cannot read CSS variables at render time. Change the hex values in that file and every pin, dot, badge, and filter button updates.
+
+### Things that are not in the theme
+
+A few values are intentionally hard-coded because they are one-off design details rather than themeable tokens:
+
+- The cover photo overlay on city headers uses a fixed `bg-black/55` scrim - adjust in `src/components/city/CityPageClient.tsx`
+- Map pin sizes (touch vs pointer) are in `src/components/map/CityMap.tsx` near the top (`HIT_TOUCH`, `HIT_POINTER`, etc.)
+- Admin panel UI (import form, bulk edit) uses some Tailwind utility colors for status states - those are admin-only and not part of the public UI
+
 ## Deployment
 
 Hosted on Vercel, auto-deploys on push to `main`. Custom domain `travel.scottquintana.com` — DNS via Netlify CNAME to `cname.vercel-dns.com`.

@@ -11,13 +11,7 @@ import { Map, LocateFixed, Loader2, X, ArrowRight, Maximize2, ChevronDown, Chevr
 import { geocodeAddress } from "@/lib/geocode";
 import type { City, Place } from "@/lib/types";
 import { cn, OVERLAY_CAPSULE } from "@/lib/utils";
-
-const CATEGORY_COLORS: Record<string, string> = {
-  food: "#e07040",
-  drink: "#7c4fc4",
-  activity: "#2d9e4a",
-  stays: "#0891b2",
-};
+import { CATEGORY_COLORS, CATEGORY_COLOR_DEFAULT } from "@/lib/categoryColors";
 
 interface CityPageClientProps {
   city: City;
@@ -273,7 +267,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
         <div className="flex items-center gap-2 overflow-x-auto">
           {categories.map((cat) => {
             const active = activeCategories.has(cat);
-            const dotColor = CATEGORY_COLORS[cat] ?? "#6b7280";
+            const dotColor = CATEGORY_COLORS[cat] ?? CATEGORY_COLOR_DEFAULT;
             return (
               <button
                 key={cat}

@@ -7,6 +7,7 @@ import { formatCategory, cn } from "@/lib/utils";
 import { X, ExternalLink, MapPin, Check, Copy, Map } from "lucide-react";
 import { useState } from "react";
 import type { Place } from "@/lib/types";
+import { CATEGORY_COLORS, CATEGORY_COLOR_DEFAULT } from "@/lib/categoryColors";
 
 interface PlaceDetailPanelProps {
   place: Place;
@@ -15,21 +16,14 @@ interface PlaceDetailPanelProps {
   onClose: () => void;
 }
 
-const CATEGORY_HEX: Record<string, string> = {
-  food: "#e07040",
-  drink: "#7c4fc4",
-  activity: "#2d9e4a",
-  stays: "#0891b2",
-};
-
 function categoryDotStyle(categories: string[]): React.CSSProperties {
   const cats = (categories ?? []).filter(Boolean);
   if (cats.length >= 2) {
-    const c1 = CATEGORY_HEX[cats[0]] ?? "#9ca3af";
-    const c2 = CATEGORY_HEX[cats[1]] ?? "#9ca3af";
+    const c1 = CATEGORY_COLORS[cats[0]] ?? CATEGORY_COLOR_DEFAULT;
+    const c2 = CATEGORY_COLORS[cats[1]] ?? CATEGORY_COLOR_DEFAULT;
     return { background: `linear-gradient(135deg, ${c1} 50%, ${c2} 50%)` };
   }
-  return { background: CATEGORY_HEX[cats[0]] ?? "#9ca3af" };
+  return { background: CATEGORY_COLORS[cats[0]] ?? CATEGORY_COLOR_DEFAULT };
 }
 
 function AddressActions({ address }: { address: string }) {
@@ -58,7 +52,7 @@ function AddressActions({ address }: { address: string }) {
           onClick={copy}
           className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] border border-[var(--color-border)] px-2 py-1 rounded transition-colors"
         >
-          {copied ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+          {copied ? <Check size={11} className="text-[var(--color-success)]" /> : <Copy size={11} />}
           {copied ? "Copied" : "Copy address"}
         </button>
         <button
@@ -115,11 +109,11 @@ export function PlaceDetailPanel({ place, citySlug, focusedLocationId, onClose }
           <div>
             <div className="flex items-center gap-1.5">
               <p className="font-semibold text-sm text-[var(--color-text-primary)] leading-snug whitespace-nowrap">{place.name}</p>
-              {place.vetted && <Check size={12} className="text-emerald-500 shrink-0" />}
+              {place.vetted && <Check size={12} className="text-[var(--color-success)] shrink-0" />}
             </div>
             <div className="flex flex-wrap gap-1 mt-0.5">
               {(place.categories ?? []).map((c) => {
-                const hex = CATEGORY_HEX[c] ?? "#9ca3af";
+                const hex = CATEGORY_COLORS[c] ?? CATEGORY_COLOR_DEFAULT;
                 return (
                   <span
                     key={c}
