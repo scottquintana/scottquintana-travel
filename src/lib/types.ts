@@ -64,4 +64,4 @@ export type ImportBulkPayload = {
   places: ImportSinglePayload[];
 };
 
-export const DEFAULT_CATEGORIES = ["food", "drink", "activity", "other"] as const;
+export const DEFAULT_CATEGORIES = ["food", "drink", "activity", "stays", "other"] as const;

@@ -36,6 +36,7 @@ const INITIAL_CENTER = { lat: 34.0195, lng: -118.4912 };
 const LIGHT_MAP_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
   { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
+  { featureType: "road.highway", elementType: "labels", stylers: [{ visibility: "off" }] },
 ];
 
 const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
@@ -50,6 +51,7 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#373737" }] },
   { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#484848" }] },
   { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#212121" }] },
+  { featureType: "road.highway", elementType: "labels", stylers: [{ visibility: "off" }] },
   { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
   { featureType: "transit", stylers: [{ visibility: "off" }] },
   { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },

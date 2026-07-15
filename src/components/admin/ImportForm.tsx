@@ -304,6 +304,11 @@ export function ImportForm({ city }: ImportFormProps) {
                       city={city}
                       prefill={item}
                       onSaved={() => setItemState(i, "saved")}
+                      onUpdate={(updates) =>
+                        setItems((prev) =>
+                          prev.map((x, j) => (j === i ? { ...x, ...updates } : x))
+                        )
+                      }
                     />
                   </div>
                 )}

@@ -54,6 +54,7 @@ async function resolveUrl(url: string): Promise<string> {
 
 function mapGoogleTypes(types: string[]): string[] {
   const cats = new Set<string>();
+  const stayTypes = new Set(["lodging", "hotel", "motel", "resort_hotel", "extended_stay_hotel", "bed_and_breakfast", "hostel", "campground", "rv_park"]);
   const drinkTypes = new Set(["bar", "night_club", "liquor_store", "brewery", "winery", "wine_bar", "cocktail_bar"]);
   const foodTypes = new Set([
     "restaurant", "cafe", "bakery", "food", "meal_delivery", "meal_takeaway",
@@ -70,6 +71,7 @@ function mapGoogleTypes(types: string[]): string[] {
   ]);
 
   for (const type of types) {
+    if (stayTypes.has(type)) cats.add("stays");
     if (drinkTypes.has(type)) cats.add("drink");
     if (foodTypes.has(type)) cats.add("food");
     if (activityTypes.has(type)) cats.add("activity");

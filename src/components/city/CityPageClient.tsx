@@ -16,6 +16,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   food: "#e07040",
   drink: "#7c4fc4",
   activity: "#2d9e4a",
+  stays: "#0891b2",
 };
 
 interface CityPageClientProps {

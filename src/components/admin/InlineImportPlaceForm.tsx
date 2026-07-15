@@ -17,11 +17,12 @@ interface InlineImportPlaceFormProps {
   city: City;
   prefill: ImportSinglePayload;
   onSaved: () => void;
+  onUpdate?: (updates: Partial<ImportSinglePayload>) => void;
 }
 
 type LocationDraft = { address: string; lat: number; lng: number; notes: string };
 
-export function InlineImportPlaceForm({ city, prefill, onSaved }: InlineImportPlaceFormProps) {
+export function InlineImportPlaceForm({ city, prefill, onSaved, onUpdate }: InlineImportPlaceFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
@@ -50,6 +51,20 @@ export function InlineImportPlaceForm({ city, prefill, onSaved }: InlineImportPl
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
+    onUpdate?.({
+      name: form.name,
+      categories: form.categories,
+      description: form.description,
+      vetted: form.vetted,
+      website: form.website,
+      socials,
+      recommendations,
+      photos,
+      locations: locations.map((l) => ({ address: l.address, lat: l.lat, lng: l.lng, notes: l.notes })),
+    });
+  }, [form, socials, recommendations, photos, locations]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     const autoGeocode = async () => {
       for (let i = 0; i < locations.length; i++) {
         const loc = locations[i];
@@ -59,6 +74,24 @@ export function InlineImportPlaceForm({ city, prefill, onSaved }: InlineImportPl
       }
     };
     autoGeocode();
+
+    const autoFetchPhotos = async () => {
+      if ((prefill.photos ?? []).length > 0) return;
+      if (!prefill.name) return;
+      try {
+        const res = await fetch("/api/admin/places/google-import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: prefill.name }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.photos?.length) setPhotos(data.photos);
+      } catch {
+        // silently skip — photos are optional
+      }
+    };
+    autoFetchPhotos();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const geocodeLocation = async (i: number) => {

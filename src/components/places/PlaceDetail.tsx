@@ -18,6 +18,7 @@ const CATEGORY_HEX: Record<string, string> = {
   food: "#e07040",
   drink: "#7c4fc4",
   activity: "#2d9e4a",
+  stays: "#0891b2",
 };
 
 const SOCIAL_ICONS: Record<string, string> = {
@@ -129,12 +130,16 @@ export function PlaceDetail({ place, citySlug, onClose, isModal }: PlaceDetailPr
                   <div className="flex gap-2 ml-5">
                     <a
                       href={googleMapsUrl(loc.lat, loc.lng, place.name)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-xs text-[var(--color-accent)] hover:underline flex items-center gap-1"
                     >
                       <ExternalLink size={11} /> Google Maps
                     </a>
                     <a
                       href={appleMapsUrl(loc.lat, loc.lng, place.name)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-xs text-[var(--color-accent)] hover:underline flex items-center gap-1"
                     >
                       <ExternalLink size={11} /> Apple Maps

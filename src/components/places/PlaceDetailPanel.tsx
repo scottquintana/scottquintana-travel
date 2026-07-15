@@ -18,6 +18,7 @@ const CATEGORY_HEX: Record<string, string> = {
   food: "#e07040",
   drink: "#7c4fc4",
   activity: "#2d9e4a",
+  stays: "#0891b2",
 };
 
 function categoryDotStyle(categories: string[]): React.CSSProperties {
@@ -42,7 +43,7 @@ function AddressActions({ address }: { address: string }) {
 
   const openMaps = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.location.href = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+    window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, "_blank", "noopener,noreferrer");
   };
 
   return (

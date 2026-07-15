@@ -3,9 +3,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CityForm } from "@/components/admin/CityForm";
 import { ExportButton } from "@/components/admin/ExportButton";
+import { FetchPhotosSection } from "@/components/admin/FetchPhotosButton";
 import { DeleteAllPlacesButton } from "@/components/admin/DeleteAllPlacesButton";
 import { Button } from "@/components/ui/Button";
-import { Upload } from "lucide-react";
+import { Upload, ListChecks } from "lucide-react";
 
 export default async function EditCityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,12 +20,16 @@ export default async function EditCityPage({ params }: { params: Promise<{ id: s
         <div className="flex flex-wrap items-center gap-2">
           <DeleteAllPlacesButton cityId={id} cityName={city.name} />
           <ExportButton cityId={id} cityName={city.name} />
+          <Link href={`/admin/cities/${id}/bulk-edit`}>
+            <Button variant="secondary" size="sm"><ListChecks size={13} /> Bulk edit</Button>
+          </Link>
           <Link href={`/admin/cities/${id}/import`}>
             <Button variant="secondary" size="sm"><Upload size={13} /> Import places</Button>
           </Link>
         </div>
       </div>
       <CityForm city={city} />
+      <FetchPhotosSection cityId={id} />
     </div>
   );
 }
