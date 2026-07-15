@@ -9,12 +9,21 @@ function extractFromMapsUrl(url: string): {
   try {
     const u = new URL(url);
 
+    // ChIJ place ID from data param (most reliable)
     const placeIdMatch = url.match(/!1s(ChIJ[^!&]+)/);
     const placeId = placeIdMatch ? decodeURIComponent(placeIdMatch[1]) : null;
 
-    const nameMatch = u.pathname.match(/\/maps\/place\/([^/@]+)/);
-    const name = nameMatch ? decodeURIComponent(nameMatch[1].replace(/\+/g, " ")) : null;
+    // Place name from /maps/place/<name>/ path
+    const nameFromPath = u.pathname.match(/\/maps\/place\/([^/@]+)/);
+    // Place name/address from ?q= param (maps.google.com format)
+    const nameFromQ = u.searchParams.get("q");
+    const name = nameFromPath
+      ? decodeURIComponent(nameFromPath[1].replace(/\+/g, " "))
+      : nameFromQ
+      ? nameFromQ.split(",")[0].trim()  // take just the place name, not the full address
+      : null;
 
+    // Coordinates from @lat,lng in path
     const coordMatch = u.pathname.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
     const lat = coordMatch ? parseFloat(coordMatch[1]) : null;
     const lng = coordMatch ? parseFloat(coordMatch[2]) : null;
@@ -96,7 +105,8 @@ export async function POST(req: NextRequest) {
   const isUrl =
     rawQuery.includes("maps.app.goo.gl") ||
     rawQuery.includes("goo.gl/maps") ||
-    rawQuery.includes("google.com/maps");
+    rawQuery.includes("google.com/maps") ||
+    rawQuery.includes("maps.google.com");
 
   if (isUrl) {
     const finalUrl = await resolveUrl(rawQuery.trim());
