@@ -193,9 +193,10 @@ export function CitiesClient({ cities }: { cities: CityWithCount[] }) {
     <>
       {/* Sticky header */}
       <div
-        className={`fixed top-0 left-0 right-0 z-50 bg-[var(--color-background)] border-b border-[var(--color-border)] transition-transform duration-200 ${
+        className={`fixed top-0 left-0 right-0 z-50 border-b border-[var(--color-border)] transition-transform duration-200 ${
           stickyVisible ? "translate-y-0" : "-translate-y-full"
         }`}
+        style={{ backgroundColor: "var(--color-background)" }}
       >
         <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
           <span className="text-sm font-semibold text-[var(--color-text-primary)] [font-family:var(--font-display)]">Cities</span>

@@ -230,7 +230,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
   }, [filteredPlaces]);
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--color-background)]">
+    <div className="flex flex-col h-[100dvh] bg-[var(--color-background)]">
       {/* Top nav */}
       <header className="shrink-0 border-b border-[var(--color-border)] bg-[var(--color-surface)] relative overflow-hidden">
         {/* Cover photo background — mobile always, desktop optional */}
@@ -305,7 +305,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
               Clear
             </button>
           )}
-          <label className="ml-auto shrink-0 flex items-center gap-2 cursor-pointer select-none py-1 px-1">
+          <label className="ml-auto shrink-0 hidden md:flex items-center gap-2 cursor-pointer select-none py-1 px-1">
             <input
               type="checkbox"
               checked={!showUnvetted}

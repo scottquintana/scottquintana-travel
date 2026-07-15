@@ -131,11 +131,20 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
   });
 
+  const dragListenersRef = useRef<google.maps.MapsEventListener[]>([]);
+
   const onLoad = useCallback((m: google.maps.Map) => {
     mapRef.current = m;
     setMap(m);
+    // Hide pins during user-initiated drag to prevent OverlayView flash
+    dragListenersRef.current = [
+      google.maps.event.addListener(m, "dragstart", () => setIsPanning(true)),
+      google.maps.event.addListener(m, "idle", () => setIsPanning(false)),
+    ];
   }, []);
   const onUnmount = useCallback(() => {
+    dragListenersRef.current.forEach((l) => google.maps.event.removeListener(l));
+    dragListenersRef.current = [];
     mapRef.current = null;
     setMap(null);
   }, []);
