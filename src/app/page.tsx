@@ -21,13 +21,6 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-[var(--color-background)]">
       <div className="max-w-5xl mx-auto px-4 py-12">
-        <header className="mb-8">
-          <h1 className="text-3xl font-semibold text-[var(--color-text-primary)] mb-2 [font-family:var(--font-display)]">Cities</h1>
-          <p className="text-[var(--color-text-secondary)]">
-            Food, drinks, and things to do across cities I love.
-          </p>
-        </header>
-
         <CitiesClient cities={cities} />
       </div>
     </main>
