@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, LayoutGrid, List } from "lucide-react";
+import { Search, LayoutGrid, List, ChevronDown, ChevronUp } from "lucide-react";
+import Markdown from "react-markdown";
 
 interface CityWithCount {
   id: string;
@@ -45,49 +46,110 @@ function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode
   );
 }
 
+const mdComponents = {
+  p: ({ children }: { children: React.ReactNode }) => <p className="my-1 first:mt-0">{children}</p>,
+  a: ({ href, children }: { href?: string; children: React.ReactNode }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] hover:underline">{children}</a>
+  ),
+  strong: ({ children }: { children: React.ReactNode }) => <strong className="font-semibold text-[var(--color-text-primary)]">{children}</strong>,
+  ul: ({ children }: { children: React.ReactNode }) => <ul className="my-1 ml-4 list-disc">{children}</ul>,
+  ol: ({ children }: { children: React.ReactNode }) => <ol className="my-1 ml-4 list-decimal">{children}</ol>,
+  li: ({ children }: { children: React.ReactNode }) => <li className="my-0">{children}</li>,
+};
+
 function GridCard({ city }: { city: CityWithCount }) {
   const count = city.places?.[0]?.count ?? 0;
+  const [expanded, setExpanded] = useState(false);
+  const [isClampable, setIsClampable] = useState(false);
+  const descRef = useRef<HTMLDivElement>(null);
+  const expandedRef = useRef(expanded);
+  expandedRef.current = expanded;
+
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+    const check = () => {
+      if (expandedRef.current) {
+        const lh = parseFloat(getComputedStyle(el).lineHeight) || 20;
+        setIsClampable(el.scrollHeight > lh * 2 + 1);
+      } else {
+        setIsClampable(el.scrollHeight > el.clientHeight + 1);
+      }
+    };
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [city.description]);
+
   return (
-    <Link
-      href={`/${city.slug}`}
-      className="group block rounded-[var(--radius-xl)] overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:border-[var(--color-accent-muted)] transition-all duration-200 active:opacity-80 touch-manipulation"
-    >
-      <div className="relative h-48 bg-[var(--color-surface-alt)]">
-        {city.cover_photo ? (
-          <Image
-            src={city.cover_photo}
-            alt={city.name}
-            fill
-            className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-[var(--color-text-muted)] text-sm">
-            No photo
-          </div>
-        )}
-      </div>
-      <div className="px-4 py-3">
-        <div className="flex items-baseline justify-between gap-2">
-          <h2 className="font-semibold text-[var(--color-text-primary)] [font-family:var(--font-display)]">{city.name}</h2>
-          <span className="text-xs text-[var(--color-accent)] shrink-0">
-            {count} {count === 1 ? "place" : "places"}
-          </span>
+    <div className="group block rounded-[var(--radius-xl)] overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:border-[var(--color-accent-muted)] transition-all duration-200">
+      <Link href={`/${city.slug}`} className="block active:opacity-80 touch-manipulation">
+        <div className="relative h-48 bg-[var(--color-surface-alt)]">
+          {city.cover_photo ? (
+            <Image src={city.cover_photo} alt={city.name} fill className="object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[var(--color-text-muted)] text-sm">No photo</div>
+          )}
         </div>
-      </div>
-    </Link>
+        <div className="px-4 pt-4 pb-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="font-semibold text-[var(--color-text-primary)] [font-family:var(--font-display)]">{city.name}</h2>
+            <span className="text-xs text-[var(--color-accent)] shrink-0">{count} {count === 1 ? "place" : "places"}</span>
+          </div>
+        </div>
+      </Link>
+      {city.description && (
+        <div className="px-4 pb-4">
+          <div ref={descRef} className={`text-sm text-[var(--color-text-secondary)] ${expanded ? "" : "line-clamp-2"}`}>
+            <Markdown components={mdComponents}>{city.description}</Markdown>
+          </div>
+          {isClampable && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-1 flex items-center gap-0.5 text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors"
+            >
+              {expanded ? <><ChevronUp size={11} /> Show less</> : <><ChevronDown size={11} /> Show more</>}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
 function ListRow({ city }: { city: CityWithCount }) {
   const count = city.places?.[0]?.count ?? 0;
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <Link
-      href={`/${city.slug}`}
-      className="flex items-center justify-between gap-3 py-3 px-1 border-b border-[var(--color-border)] last:border-0 hover:text-[var(--color-accent)] transition-colors active:opacity-70 touch-manipulation"
-    >
-      <span className="font-medium text-[var(--color-text-primary)] [font-family:var(--font-display)]">{city.name}</span>
-      <span className="text-xs text-[var(--color-text-muted)] shrink-0">{count} {count === 1 ? "place" : "places"}</span>
-    </Link>
+    <div className="border-b border-[var(--color-border)] last:border-0">
+      <div className="flex items-center justify-between gap-3 py-3 px-1">
+        <div className="flex items-center gap-1 min-w-0">
+          <Link
+            href={`/${city.slug}`}
+            className="font-medium text-[var(--color-text-primary)] [font-family:var(--font-display)] hover:text-[var(--color-accent)] transition-colors active:opacity-70 touch-manipulation truncate"
+          >
+            {city.name}
+          </Link>
+          {city.description && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors shrink-0 p-1"
+              aria-label={expanded ? "Collapse" : "Expand"}
+            >
+              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+          )}
+        </div>
+        <span className="text-xs text-[var(--color-text-muted)] shrink-0">{count} {count === 1 ? "place" : "places"}</span>
+      </div>
+      {expanded && city.description && (
+        <div className="px-1 pb-3 text-sm text-[var(--color-text-secondary)]">
+          <Markdown components={mdComponents}>{city.description}</Markdown>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -131,7 +193,7 @@ export function CitiesClient({ cities }: { cities: CityWithCount[] }) {
     <>
       {/* Sticky header */}
       <div
-        className={`fixed top-0 left-0 right-0 z-50 bg-[var(--color-bg)]/97 backdrop-blur-sm border-b border-[var(--color-border)] transition-transform duration-200 ${
+        className={`fixed top-0 left-0 right-0 z-50 bg-[var(--color-background)] border-b border-[var(--color-border)] transition-transform duration-200 ${
           stickyVisible ? "translate-y-0" : "-translate-y-full"
         }`}
       >
@@ -163,7 +225,7 @@ export function CitiesClient({ cities }: { cities: CityWithCount[] }) {
         <ViewToggle mode={viewMode} onChange={setViewMode} />
       </div>
 
-      {/* Search bar (watched by IntersectionObserver) */}
+      {/* Search bar */}
       <div ref={searchBarRef} className="mb-6">
         <SearchBar value={query} onChange={setQuery} />
       </div>
