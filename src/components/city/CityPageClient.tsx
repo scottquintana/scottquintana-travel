@@ -242,7 +242,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="relative z-10">
           {/* Single-row layout for both mobile and desktop */}
           <div className="relative flex items-center justify-between gap-3 px-4 py-3">
             <Link
@@ -270,7 +270,7 @@ export function CityPageClient({ city, places }: CityPageClientProps) {
 
       {/* Filter bar */}
       <div className="shrink-0 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-4 py-2">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto">
+        <div className="flex items-center gap-2 overflow-x-auto">
           {categories.map((cat) => {
             const active = activeCategories.has(cat);
             const dotColor = CATEGORY_COLORS[cat] ?? "#6b7280";

@@ -36,5 +36,5 @@ export default async function CityPage({ params }: { params: Promise<{ citySlug:
 export async function generateMetadata({ params }: { params: Promise<{ citySlug: string }> }) {
   const { citySlug } = await params;
   const data = await getCityData(citySlug);
-  return { title: data ? `${data.city.name} — Scott Quintana` : "Not Found" };
+  return { title: data ? `${data.city.name} - Scott Quintana` : "Not Found" };
 }

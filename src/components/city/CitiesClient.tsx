@@ -107,7 +107,7 @@ function GridCard({ city }: { city: CityWithCount }) {
         </div>
       </Link>
       {city.description && (
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4" onPointerDown={(e) => e.stopPropagation()}>
           <div ref={descRef} className={`text-sm text-[var(--color-text-secondary)] ${expanded ? "" : "line-clamp-2"}`}>
             <Markdown components={mdComponents}>{city.description}</Markdown>
           </div>

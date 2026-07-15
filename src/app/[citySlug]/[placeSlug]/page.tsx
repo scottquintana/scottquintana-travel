@@ -38,5 +38,5 @@ export default async function PlacePage({ params }: { params: Promise<{ citySlug
 export async function generateMetadata({ params }: { params: Promise<{ citySlug: string; placeSlug: string }> }) {
   const { citySlug, placeSlug } = await params;
   const place = await getPlace(citySlug, placeSlug);
-  return { title: place ? `${place.name} — Scott Quintana` : "Not Found" };
+  return { title: place ? `${place.name} - Scott Quintana` : "Not Found" };
 }

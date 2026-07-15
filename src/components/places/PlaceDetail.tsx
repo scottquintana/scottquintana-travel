@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { formatCategory, googleMapsUrl, appleMapsUrl } from "@/lib/utils";
+import { useState } from "react";
 import { MapPin, Globe, Share2, ExternalLink, X } from "lucide-react";
 import type { Place } from "@/lib/types";
 
@@ -30,6 +31,8 @@ const SOCIAL_ICONS: Record<string, string> = {
 };
 
 export function PlaceDetail({ place, citySlug, onClose, isModal }: PlaceDetailProps) {
+  const [erroredPhotos, setErroredPhotos] = useState<Set<number>>(new Set());
+
   const handleShare = async () => {
     const url = `${window.location.origin}/${citySlug}/${place.slug}`;
     if (navigator.share) {
@@ -186,17 +189,20 @@ export function PlaceDetail({ place, citySlug, onClose, isModal }: PlaceDetailPr
           <div>
             <h2 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Photos</h2>
             <div className="flex flex-col gap-3">
-              {place.photos.map((photo, i) => (
-                <Image
-                  key={i}
-                  src={photo}
-                  alt={`${place.name} photo ${i + 1}`}
-                  width={0}
-                  height={0}
-                  sizes="100vw"
-                  className="w-full h-auto rounded-[var(--radius-md)]"
-                />
-              ))}
+              {place.photos.map((photo, i) =>
+                erroredPhotos.has(i) ? null : (
+                  <Image
+                    key={i}
+                    src={photo}
+                    alt={`${place.name} photo ${i + 1}`}
+                    width={0}
+                    height={0}
+                    sizes="100vw"
+                    className="w-full h-auto rounded-[var(--radius-md)]"
+                    onError={() => setErroredPhotos((prev) => new Set([...prev, i]))}
+                  />
+                )
+              )}
             </div>
           </div>
         )}

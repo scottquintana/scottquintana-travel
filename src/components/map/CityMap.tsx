@@ -26,7 +26,13 @@ interface CityMapProps {
 const mapContainerStyle = { width: "100%", height: "100%" };
 // Stable reference — library uses reference equality to decide whether to call map.setCenter()
 const INITIAL_CENTER = { lat: 34.0195, lng: -118.4912 };
-const HIT = 44; // tap target size in px
+// Tap target and visual pin sizes — larger on touch devices for accuracy
+const HIT_TOUCH = 38;
+const HIT_POINTER = 28;
+const PIN_SEL_TOUCH = 18;
+const PIN_SEL_POINTER = 14;
+const PIN_UNSEL_TOUCH = 12;
+const PIN_UNSEL_POINTER = 9;
 
 const LIGHT_MAP_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
@@ -168,6 +174,7 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [cssAccentColor, setCssAccentColor] = useState("#7091a8");
   const [systemDark, setSystemDark] = useState(false);
+  const [isTouch, setIsTouch] = useState(true); // default true until we detect otherwise
 
   useEffect(() => {
     const val = getComputedStyle(document.documentElement).getPropertyValue("--color-accent").trim();
@@ -180,6 +187,11 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
     const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    // Use pointer media query: "fine" = mouse, "coarse" = touch/finger
+    setIsTouch(window.matchMedia("(pointer: coarse)").matches);
   }, []);
 
   const [isPanning, setIsPanning] = useState(false);
@@ -291,7 +303,10 @@ export function CityMap({ pins, selectedPlaceId, focusedLocationId, userLocation
       {map && pins.map(({ place, location }) => {
         const isSelected = selectedPlaceId === place.id;
         const isFocused = focusedLocationId === location.id;
-        const size = isSelected ? 20 : 14;
+        const HIT = isTouch ? HIT_TOUCH : HIT_POINTER;
+        const size = isSelected
+          ? (isTouch ? PIN_SEL_TOUCH : PIN_SEL_POINTER)
+          : (isTouch ? PIN_UNSEL_TOUCH : PIN_UNSEL_POINTER);
         const hidden = isPanning && !isFocused;
         return (
           <TransformOverlay

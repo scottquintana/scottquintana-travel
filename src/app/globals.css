@@ -51,6 +51,14 @@ input, textarea, select, button {
   font-family: inherit;
 }
 
+/* Remove iOS blue tap flash; add opacity feedback for all links */
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+a:active {
+  opacity: 0.6;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --color-background: #1c1c1c;
