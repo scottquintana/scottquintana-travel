@@ -210,7 +210,13 @@ When either breaks, the script logs an error with instructions and saves a scree
 
 ## Customization
 
-The app is designed so that most visual changes can be made in two files without touching component code.
+The app is designed so that most visual changes can be made in a small number of files without touching component code.
+
+### Site name, intro, and contact
+
+Open `src/lib/siteConfig.ts`. Every piece of site identity lives there: the hero title, the intro paragraph, the owner name used in page titles, and the contact email on place detail pages. Change those values and the whole site updates.
+
+
 
 ### Colors, fonts, radius, and shadows
 

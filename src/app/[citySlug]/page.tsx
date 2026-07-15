@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CityPageClient } from "@/components/city/CityPageClient";
 import type { City, Place } from "@/lib/types";
+import siteConfig from "@/lib/siteConfig";
 
 async function getCityData(slug: string): Promise<{ city: City; places: Place[] } | null> {
   try {
@@ -36,5 +37,5 @@ export default async function CityPage({ params }: { params: Promise<{ citySlug:
 export async function generateMetadata({ params }: { params: Promise<{ citySlug: string }> }) {
   const { citySlug } = await params;
   const data = await getCityData(citySlug);
-  return { title: data ? `${data.city.name} - Scott Quintana` : "Not Found" };
+  return { title: data ? `${data.city.name} - ${siteConfig.ownerName}` : "Not Found" };
 }

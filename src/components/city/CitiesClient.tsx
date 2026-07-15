@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search, LayoutGrid, List, ChevronDown, ChevronUp } from "lucide-react";
 import Markdown from "react-markdown";
+import siteConfig from "@/lib/siteConfig";
 
 interface CityWithCount {
   id: string;
@@ -225,10 +226,10 @@ export function CitiesClient({ cities }: { cities: CityWithCount[] }) {
       {/* Hero */}
       <div className="mb-8">
         <h1 className="text-3xl font-semibold text-[var(--color-text-primary)] mb-2 [font-family:var(--font-display)]">
-          Scott&apos;s Travel Recs
+          {siteConfig.title}
         </h1>
         <p className="text-[var(--color-text-secondary)] max-w-lg">
-          After years of touring, I&apos;ve collected a good list of all of my favorites.
+          {siteConfig.intro}
         </p>
       </div>
 

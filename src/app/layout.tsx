@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Figtree } from "next/font/google";
 import { NavigationOverlay } from "@/components/NavigationOverlay";
+import siteConfig from "@/lib/siteConfig";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -16,8 +17,8 @@ const figtree = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "Scott Quintana - Places",
-  description: "Places I like across cities I've visited.",
+  title: siteConfig.metaTitle,
+  description: siteConfig.metaDescription,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

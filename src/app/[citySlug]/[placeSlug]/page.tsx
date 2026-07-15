@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PlaceDetail } from "@/components/places/PlaceDetail";
 import type { Place } from "@/lib/types";
+import siteConfig from "@/lib/siteConfig";
 
 async function getPlace(citySlug: string, placeSlug: string): Promise<Place | null> {
   try {
@@ -38,5 +39,5 @@ export default async function PlacePage({ params }: { params: Promise<{ citySlug
 export async function generateMetadata({ params }: { params: Promise<{ citySlug: string; placeSlug: string }> }) {
   const { citySlug, placeSlug } = await params;
   const place = await getPlace(citySlug, placeSlug);
-  return { title: place ? `${place.name} - Scott Quintana` : "Not Found" };
+  return { title: place ? `${place.name} - ${siteConfig.ownerName}` : "Not Found" };
 }

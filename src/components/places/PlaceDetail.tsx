@@ -8,6 +8,7 @@ import { useState } from "react";
 import { MapPin, Globe, Share2, ExternalLink, X } from "lucide-react";
 import type { Place } from "@/lib/types";
 import { CATEGORY_COLORS, CATEGORY_COLOR_DEFAULT } from "@/lib/categoryColors";
+import siteConfig from "@/lib/siteConfig";
 
 interface PlaceDetailProps {
   place: Place;
@@ -203,7 +204,7 @@ export function PlaceDetail({ place, citySlug, onClose, isModal }: PlaceDetailPr
         )}
 
         <a
-          href={`mailto:scott@scottquintana.com?subject=Issue with ${encodeURIComponent(place.name)}`}
+          href={`mailto:${siteConfig.contactEmail}?subject=Issue with ${encodeURIComponent(place.name)}`}
           className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
         >
           Report an issue
