@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -26,7 +26,7 @@ export function PlaceForm({ cities, place }: PlaceFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
-    city_id: place?.city_id ?? (cities[0]?.id ?? ""),
+    city_id: place?.city_id ?? (cities[0]?.id ?? ""),  // restored from localStorage below for new places
     name: place?.name ?? "",
     slug: place?.slug ?? "",
     categories: place?.categories ?? ["food"],
@@ -50,6 +50,20 @@ export function PlaceForm({ cities, place }: PlaceFormProps) {
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState("");
   const [importedName, setImportedName] = useState("");
+
+  // Restore last-used city for new places; save it whenever it changes
+  useEffect(() => {
+    if (place) return;
+    const saved = localStorage.getItem("admin_last_city_id");
+    if (saved && cities.find((c) => c.id === saved)) {
+      setForm((f) => ({ ...f, city_id: saved }));
+    }
+  }, []);
+
+  const handleCityChange = (cityId: string) => {
+    localStorage.setItem("admin_last_city_id", cityId);
+    setForm((f) => ({ ...f, city_id: cityId }));
+  };
 
   const handleGoogleImport = async () => {
     if (!importQuery.trim()) return;
@@ -270,7 +284,7 @@ export function PlaceForm({ cities, place }: PlaceFormProps) {
         <select
           id="city"
           value={form.city_id}
-          onChange={(e) => setForm((f) => ({ ...f, city_id: e.target.value }))}
+          onChange={(e) => handleCityChange(e.target.value)}
           className="w-full px-3 py-2 text-base bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
         >
           {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

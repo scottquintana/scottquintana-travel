@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogOut, MapPin, Building2 } from "lucide-react";
@@ -36,6 +37,14 @@ function LogoutButton({ iconOnly }: { iconOnly?: boolean }) {
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  // Prevent body-level scroll on iOS — the admin layout manages its own scroll
+  // via the <main> element. Without this, iOS rubber-bands the body independently,
+  // creating a scrollable blank area that can push the content off-screen.
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
   return (
     <div className="flex flex-col md:flex-row h-dvh overflow-hidden bg-[var(--color-background)]">
 
