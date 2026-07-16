@@ -20,7 +20,7 @@ function extractFromMapsUrl(url: string): {
     const name = nameFromPath
       ? decodeURIComponent(nameFromPath[1].replace(/\+/g, " "))
       : nameFromQ
-      ? nameFromQ.split(",")[0].trim()  // take just the place name, not the full address
+      ? nameFromQ.split(",")[0].trim()
       : null;
 
     // Coordinates from @lat,lng in path
@@ -42,9 +42,18 @@ function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 8000): Pr
   );
 }
 
+// Follows HTTP redirects for standard google.com/maps URLs.
+// maps.app.goo.gl short links use Firebase Dynamic Links (JS-only redirect)
+// and cannot be resolved server-side — those are rejected before reaching here.
 async function resolveUrl(url: string): Promise<string> {
   try {
-    const res = await fetchWithTimeout(url, { redirect: "follow" }, 5000);
+    const res = await fetchWithTimeout(url, {
+      redirect: "follow",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+    }, 6000);
     await res.body?.cancel();
     return res.url;
   } catch {
@@ -67,7 +76,7 @@ function mapGoogleTypes(types: string[]): string[] {
     "museum", "tourist_attraction", "park", "shopping_mall", "store", "art_gallery",
     "amusement_park", "spa", "gym", "fitness_center", "movie_theater", "library", "zoo",
     "aquarium", "bowling_alley", "stadium", "landmark", "historical_place",
-    "national_park", "point_of_interest", "natural_feature",
+    "national_park", "natural_feature",
   ]);
 
   for (const type of types) {
@@ -92,6 +101,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No query provided" }, { status: 400 });
   }
 
+  // Firebase Dynamic Links (maps.app.goo.gl, goo.gl/maps) use a JS-only redirect page
+  // that cannot be followed server-side. Tell the user to open the link in a browser
+  // and copy the full URL from the address bar.
+  if (rawQuery.includes("maps.app.goo.gl") || rawQuery.includes("goo.gl/maps")) {
+    return NextResponse.json(
+      { error: "Short Google Maps links can't be imported directly. Open the link in your browser, let Maps load, then copy the full URL from the address bar (starts with google.com/maps/place/...) and paste it here." },
+      { status: 400 }
+    );
+  }
+
   if (rawQuery.includes("share.google")) {
     return NextResponse.json(
       { error: "Google share links can't be resolved. Search by place name instead, or copy the full URL from Maps on desktop (right-click a place → Copy link)." },
@@ -105,8 +124,6 @@ export async function POST(req: NextRequest) {
   let resolvedPlaceId: string | null = null;
 
   const isUrl =
-    rawQuery.includes("maps.app.goo.gl") ||
-    rawQuery.includes("goo.gl/maps") ||
     rawQuery.includes("google.com/maps") ||
     rawQuery.includes("maps.google.com");
 

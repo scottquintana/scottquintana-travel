@@ -36,11 +36,6 @@ function AddressActions({ address }: { address: string }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const openMaps = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, "_blank", "noopener,noreferrer");
-  };
-
   return (
     <div className="flex flex-col gap-1.5 min-w-0">
       <div className="flex items-start gap-1.5">
@@ -55,13 +50,16 @@ function AddressActions({ address }: { address: string }) {
           {copied ? <Check size={11} className="text-[var(--color-success)]" /> : <Copy size={11} />}
           {copied ? "Copied" : "Copy address"}
         </button>
-        <button
-          onClick={openMaps}
+        <a
+          href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
           className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-alt)] border border-[var(--color-border)] px-2 py-1 rounded transition-colors"
         >
           <Map size={11} />
           Open in Maps
-        </button>
+        </a>
       </div>
     </div>
   );

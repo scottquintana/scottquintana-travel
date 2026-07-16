@@ -16,8 +16,12 @@ export function NavigationOverlay() {
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
+      // Skip middle-click, cmd/ctrl/shift+click — those open new tabs/windows
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
       const anchor = (e.target as Element).closest("a");
       if (!anchor) return;
+      // Skip links that explicitly open in a new tab
+      if (anchor.target === "_blank") return;
       const href = anchor.getAttribute("href");
       // Only trigger for internal page navigations
       if (!href || href.startsWith("http") || href.startsWith("mailto") || href.startsWith("#") || href.startsWith("tel")) return;

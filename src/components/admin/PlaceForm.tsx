@@ -271,7 +271,7 @@ export function PlaceForm({ cities, place }: PlaceFormProps) {
           id="city"
           value={form.city_id}
           onChange={(e) => setForm((f) => ({ ...f, city_id: e.target.value }))}
-          className="w-full px-3 py-2 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+          className="w-full px-3 py-2 text-base bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
         >
           {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
