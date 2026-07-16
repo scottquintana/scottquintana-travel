@@ -37,12 +37,24 @@ function LogoutButton({ iconOnly }: { iconOnly?: boolean }) {
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  // Prevent body-level scroll on iOS — the admin layout manages its own scroll
-  // via the <main> element. Without this, iOS rubber-bands the body independently,
-  // creating a scrollable blank area that can push the content off-screen.
   useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
+    // When the iOS keyboard appears, the OS scrolls the document to bring the focused
+    // input into view. That scroll offset lingers after the keyboard dismisses, leaving
+    // a blank gap. Reset it whenever the visual viewport grows (keyboard dismissed).
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    let prevHeight = vv.height;
+    const handleResize = () => {
+      if (vv.height > prevHeight) {
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+      prevHeight = vv.height;
+    };
+
+    vv.addEventListener("resize", handleResize);
+    return () => vv.removeEventListener("resize", handleResize);
   }, []);
 
   return (
