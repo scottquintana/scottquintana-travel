@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, []);
 
   return (
-    <div className="flex flex-col md:flex-row h-dvh overflow-hidden bg-[var(--color-background)]">
+    <div className="flex flex-col md:flex-row h-svh overflow-hidden bg-[var(--color-background)]">
 
       {/* Mobile top bar */}
       <nav className="md:hidden shrink-0 flex items-center gap-1 px-3 py-2 bg-[var(--color-surface)] border-b border-[var(--color-border)]">

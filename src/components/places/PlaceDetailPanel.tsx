@@ -129,20 +129,20 @@ export function PlaceDetailPanel({ place, citySlug, focusedLocationId, onClose }
         {/* Divider — desktop only */}
         <div className="hidden md:block h-8 w-px bg-[var(--color-border)] shrink-0 mt-1" />
 
-        {/* Description */}
-        {place.description && (
-          <div className="px-4 py-1 md:p-0 min-w-0 md:max-w-sm">
-            <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed md:line-clamp-3">
+        {/* Description + Read more */}
+        <div className="px-4 py-1 md:p-0 min-w-0 md:max-w-sm">
+          {place.description && (
+            <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed md:line-clamp-3 mb-1">
               {place.description}
             </p>
-            <Link
-              href={`/${citySlug}/${place.slug}`}
-              className="text-xs text-[var(--color-accent)] hover:underline mt-1 inline-block"
-            >
-              Read more →
-            </Link>
-          </div>
-        )}
+          )}
+          <Link
+            href={`/${citySlug}/${place.slug}`}
+            className="text-xs text-[var(--color-accent)] hover:underline inline-block"
+          >
+            Read more →
+          </Link>
+        </div>
 
         {/* Recommendations */}
         {place.recommendations && place.recommendations.length > 0 && (
